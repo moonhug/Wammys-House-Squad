@@ -2,6 +2,11 @@
 
 HTML-style article bodies are for advanced use only.
 
+If you need the full workflow, image rules, and copyable starter template, read:
+
+- `docs/post-authoring-spec.md`
+- `docs/templates/html-style-post-template.mdx`
+
 ## The main rule
 
 - Do not build standalone HTML pages with custom site chrome.

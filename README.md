@@ -113,6 +113,9 @@ Optional fields:
 - `docs/writing-guide.md`
 - `docs/tag-style-guide.md`
 - `docs/html-template-guide.md`
+- `docs/post-authoring-spec.md`
+- `docs/templates/markdown-post-template.md`
+- `docs/templates/html-style-post-template.mdx`
 
 ## GitHub Pages deployment
 

@@ -2,6 +2,12 @@
 
 This project is a file-based Astro blog for collaborative tech and game articles.
 
+For the full technical writing specification and copyable starter files, see:
+
+- `docs/post-authoring-spec.md`
+- `docs/templates/markdown-post-template.md`
+- `docs/templates/html-style-post-template.mdx`
+
 ## Where posts go
 
 - Put every article under `src/content/posts/tech/` or `src/content/posts/game/`.
