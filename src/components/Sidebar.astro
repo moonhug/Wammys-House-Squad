@@ -1,0 +1,36 @@
+---
+import { getCollection } from "astro:content";
+import RecentPosts from "./RecentPosts.astro";
+import { getAllTags, getRecentPosts } from "../utils/posts";
+import { withBase } from "../utils/site";
+
+const posts = await getCollection("posts");
+const visiblePosts = posts.filter((post) => !post.data.draft);
+const recentPosts = getRecentPosts(visiblePosts, 5);
+const tags = getAllTags(visiblePosts).slice(0, 14);
+---
+
+<div class="sidebar">
+  <RecentPosts posts={recentPosts} />
+
+  <section class="sidebar-block">
+    <h2 class="sidebar-block__title">Sections</h2>
+    <ul class="sidebar-links">
+      <li><a href={withBase("/tech")}>Tech articles</a></li>
+      <li><a href={withBase("/game")}>Game articles</a></li>
+      <li><a href={withBase("/template-examples")}>Template examples</a></li>
+      <li><a href={withBase("/about")}>About this project</a></li>
+    </ul>
+  </section>
+
+  <section class="sidebar-block">
+    <h2 class="sidebar-block__title">Tag Cloud</h2>
+    <div class="tag-cloud">
+      {tags.map((tag) => (
+        <a href={withBase(`/tags/${tag.slug}`)} class={`tag-cloud__item tag-cloud__item--weight-${Math.min(tag.count, 4)}`}>
+          {tag.label}
+        </a>
+      ))}
+    </div>
+  </section>
+</div>

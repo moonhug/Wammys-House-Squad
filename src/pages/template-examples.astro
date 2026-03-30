@@ -1,0 +1,111 @@
+---
+import { getCollection } from "astro:content";
+import ArticleCard from "../components/ArticleCard.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getVisibleSortedPosts } from "../utils/posts";
+
+const posts = await getCollection("posts");
+const templatePosts = getVisibleSortedPosts(posts).filter((post) => post.data.template);
+
+const mdExample = `---
+title: "Sample Markdown Post"
+description: "Short summary"
+pubDate: 2026-03-30
+author: "Your Name"
+section: "tech"
+tags: ["reverse-engineering", "ida"]
+draft: false
+heroImage: ./cover.svg
+---
+
+# Body starts here
+
+Regular Markdown works best for most posts.`;
+
+const mdxExample = `---
+title: "Sample MDX Post"
+description: "Rich post with reusable components"
+pubDate: 2026-03-29
+author: "Your Name"
+section: "game"
+tags: ["co-op", "recommendations"]
+draft: false
+---
+import Callout from "../components/Callout.astro";
+
+<Callout title="Editor note" tone="info">
+  You can mix Markdown with components in MDX.
+</Callout>`;
+
+const templateExample = `---
+title: "Template Based Post"
+description: "Advanced shared article structure"
+pubDate: 2026-03-28
+author: "Your Name"
+section: "game"
+tags: ["diary", "action-rpg"]
+draft: false
+template: "casual"
+---
+import CasualArticleTemplate from "../../../templates/CasualArticleTemplate.astro";
+
+<CasualArticleTemplate
+  hook="Shared shell, custom body."
+  quickFacts={[{ label: "Mood", value: "Relaxed" }]}
+>
+  <section>
+    <h2>Body Section</h2>
+    <p>Use shared components instead of building a whole page.</p>
+  </section>
+</CasualArticleTemplate>`;
+---
+
+<BaseLayout
+  title="Template Examples"
+  description="Reference page for Markdown, MDX, and template-based post workflows."
+>
+  <section class="panel page-intro">
+    <h2>Template Examples</h2>
+    <p>
+      This internal reference page shows the three intended authoring workflows:
+      plain Markdown, richer MDX, and advanced template-based articles that still
+      live inside the shared blog layout.
+    </p>
+  </section>
+
+  <section class="panel">
+    <div class="section-heading">
+      <h2>Openable Example Posts</h2>
+      <p>These are real posts in the content collection, so contributors can click through and inspect working examples.</p>
+    </div>
+    <div class="article-list">
+      {templatePosts.map((post) => (
+        <ArticleCard post={post} />
+      ))}
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="section-heading">
+      <h2>Markdown Example</h2>
+      <p>Best for most posts.</p>
+    </div>
+    <pre class="code-sample"><code>{mdExample}</code></pre>
+  </section>
+
+  <section class="panel">
+    <div class="section-heading">
+      <h2>MDX Example</h2>
+      <p>Best when you need callouts, figures, or reusable components.</p>
+    </div>
+    <pre class="code-sample"><code>{mdxExample}</code></pre>
+  </section>
+
+  <section class="panel">
+    <div class="section-heading">
+      <h2>HTML-Style Shared Template Example</h2>
+      <p>Advanced use only. Keep the shared site chrome untouched.</p>
+    </div>
+    <pre class="code-sample"><code>{templateExample}</code></pre>
+  </section>
+</BaseLayout>

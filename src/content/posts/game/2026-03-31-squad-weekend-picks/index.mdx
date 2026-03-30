@@ -1,0 +1,76 @@
+---
+title: "이번 주말 스쿼드 게임 추천"
+description: "한국어 템플릿 기반 예시 포스트. 주말에 가볍게 같이 볼 만한 게임 후보를 정리하고, 작은 인포 블록과 이미지 예시를 함께 넣었다."
+pubDate: 2026-03-31
+author: "L + Squad"
+section: "game"
+tags:
+  - korean
+  - recommendations
+  - squad-note
+  - weekend
+draft: false
+heroImage: ./squad-board.svg
+readingTime: "6 min"
+template: "casual"
+---
+import Figure from "../../../../components/Figure.astro";
+import GameInfo from "../../../../components/GameInfo.astro";
+import Callout from "../../../../components/Callout.astro";
+import CasualArticleTemplate from "../../../../templates/CasualArticleTemplate.astro";
+import squadBoard from "./squad-board.svg?url";
+import picksGrid from "./picks-grid.svg?url";
+
+<CasualArticleTemplate
+  hook="Wammy's House Squad용 한국어 템플릿 예시다. 주말에 다 같이 볼 게임을 고르는 상황을 가정하고, 짧은 메모와 인포 블록 위주로 구성했다."
+  quickFacts={[
+    { label: "분위기", value: "가볍고 대화하기 좋은 주말" },
+    { label: "목표", value: "너무 무겁지 않은 공용 추천 리스트" },
+    { label: "형식", value: "한국어 템플릿 기반 MDX" },
+    { label: "대상", value: "L과 주니어 스쿼드" }
+  ]}
+>
+  <section class="template-panel">
+    <h2>이번 주 방향</h2>
+    <p>
+      이번 주말 추천은 “각자 잘하는 게임”보다 “같이 보기 좋은 템포”에 초점을 맞췄다.
+      길게 몰입하는 게임 하나, 짧게 웃을 게임 하나, 천천히 얘기할 게임 하나 정도면 충분하다.
+    </p>
+  </section>
+
+  <Figure
+    src={squadBoard}
+    alt="주말 스쿼드 게임 노트 보드"
+    caption="한국어 포스트도 기존 템플릿과 같은 레이아웃 안에서 자연스럽게 들어가도록 구성했다."
+  />
+
+  <section class="template-panel">
+    <h2>후보 하나</h2>
+    <GameInfo
+      platform="PC"
+      genre="협동 액션"
+      playtime="한 세션 40~60분"
+      price="할인 대기"
+    />
+  </section>
+
+  <Callout title="고르는 기준" tone="info">
+    너무 설명이 길거나 숙련도 격차가 큰 게임은 이번 주 후보에서 조금 뒤로 미뤘다.
+    같이 보기 쉽고, 바로 이야깃거리가 생기는 게임을 우선으로 두었다.
+  </Callout>
+
+  <Figure
+    src={picksGrid}
+    alt="세 가지 추천 축을 보여주는 카드 형태의 이미지"
+    caption="빠른 웃음, 천천한 몰입, 같이 떠드는 시간처럼 추천 기준을 시각적으로 나눠 두면 고르기 쉬워진다."
+  />
+
+  <section class="template-panel">
+    <h2>마무리</h2>
+    <ul class="template-list">
+      <li>이번 주는 진입 장벽이 낮은 게임을 우선으로 고른다.</li>
+      <li>주니어들이 글을 추가할 땐 한 게임당 세 줄 정도 메모만 적어도 충분하다.</li>
+      <li>템플릿 기반 포스트라도 전체 사이트 껍데기는 건드리지 않는다.</li>
+    </ul>
+  </section>
+</CasualArticleTemplate>

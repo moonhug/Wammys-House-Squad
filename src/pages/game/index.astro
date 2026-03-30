@@ -1,0 +1,31 @@
+---
+import { getCollection } from "astro:content";
+import ArticleCard from "../../components/ArticleCard.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getPostsBySection } from "../../utils/posts";
+
+const posts = await getCollection("posts");
+const gamePosts = getPostsBySection(posts, "game");
+---
+
+<BaseLayout
+  title="Game"
+  description="Reviews, recommendation lists, diaries, and wide-ranging game culture writing."
+  currentPath="/game"
+>
+  <section class="panel page-intro">
+    <h2>Game Section</h2>
+    <p>
+      Reviews, recommendation roundups, play diaries, and other game-focused articles
+      that are meant to stay easy to add and easy to read.
+    </p>
+  </section>
+
+  <section class="panel">
+    <div class="article-list">
+      {gamePosts.map((post) => (
+        <ArticleCard post={post} />
+      ))}
+    </div>
+  </section>
+</BaseLayout>

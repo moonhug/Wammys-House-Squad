@@ -1,0 +1,53 @@
+---
+import type { CollectionEntry } from "astro:content";
+import PostMeta from "../components/PostMeta.astro";
+import RecentPosts from "../components/RecentPosts.astro";
+import SectionBadge from "../components/SectionBadge.astro";
+import TagList from "../components/TagList.astro";
+import { resolvePostAsset } from "../utils/posts";
+import BaseLayout from "./BaseLayout.astro";
+
+interface Props {
+  post: CollectionEntry<"posts">;
+  relatedPosts?: CollectionEntry<"posts">[];
+}
+
+const { post, relatedPosts = [] } = Astro.props as Props;
+const heroImage = resolvePostAsset(post, post.data.heroImage);
+---
+
+<BaseLayout
+  title={post.data.title}
+  description={post.data.description}
+  currentPath={`/${post.data.section}`}
+>
+  <article class="post-article panel">
+    <header class="post-header">
+      <SectionBadge section={post.data.section} />
+      <h1>{post.data.title}</h1>
+      <p class="post-description">{post.data.description}</p>
+      <PostMeta
+        pubDate={post.data.pubDate}
+        updatedDate={post.data.updatedDate}
+        author={post.data.author}
+      />
+      <TagList tags={post.data.tags} />
+    </header>
+
+    {heroImage && (
+      <div class="post-hero">
+        <img src={heroImage} alt="" />
+      </div>
+    )}
+
+    <div class="post-body">
+      <slot />
+    </div>
+  </article>
+
+  {relatedPosts.length > 0 && (
+    <section class="panel related-panel">
+      <RecentPosts posts={relatedPosts} title="Related Posts" />
+    </section>
+  )}
+</BaseLayout>

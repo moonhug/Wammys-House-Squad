@@ -1,0 +1,30 @@
+---
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import PostLayout from "../../layouts/PostLayout.astro";
+import { getPostSlug, getRelatedPosts, getVisibleSortedPosts } from "../../utils/posts";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("posts");
+  const visiblePosts = getVisibleSortedPosts(posts);
+
+  return visiblePosts.map((post) => ({
+    params: {
+      section: post.data.section,
+      slug: getPostSlug(post)
+    },
+    props: { post, allPosts: visiblePosts }
+  }));
+}
+
+const { post, allPosts } = Astro.props as {
+  post: CollectionEntry<"posts">;
+  allPosts: CollectionEntry<"posts">[];
+};
+
+const relatedPosts = getRelatedPosts(post, allPosts, 3);
+const { Content } = await render(post);
+---
+
+<PostLayout post={post} relatedPosts={relatedPosts}>
+  <Content />
+</PostLayout>

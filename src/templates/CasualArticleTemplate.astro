@@ -1,0 +1,38 @@
+---
+interface FactItem {
+  label: string;
+  value: string;
+}
+
+interface Props {
+  hook?: string;
+  quickFacts?: FactItem[];
+}
+
+const { hook, quickFacts = [] } = Astro.props as Props;
+---
+
+<div class="template-article template-article--casual">
+  {hook && (
+    <section class="template-panel template-panel--accent">
+      <h2>Opening Take</h2>
+      <p>{hook}</p>
+    </section>
+  )}
+
+  {quickFacts.length > 0 && (
+    <section class="template-panel">
+      <h2>At a Glance</h2>
+      <dl class="template-facts">
+        {quickFacts.map((fact) => (
+          <div>
+            <dt>{fact.label}</dt>
+            <dd>{fact.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  )}
+
+  <slot />
+</div>

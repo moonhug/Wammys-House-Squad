@@ -1,0 +1,79 @@
+---
+import "../styles/global.css";
+import Sidebar from "../components/Sidebar.astro";
+import { NAV_ITEMS, SITE_DESCRIPTION, SITE_TITLE, withBase } from "../utils/site";
+
+interface Props {
+  title?: string;
+  description?: string;
+  currentPath?: string;
+  showSidebar?: boolean;
+}
+
+const {
+  title = SITE_TITLE,
+  description = SITE_DESCRIPTION,
+  currentPath = Astro.url.pathname,
+  showSidebar = true
+} = Astro.props as Props;
+
+const pageTitle = title === SITE_TITLE ? SITE_TITLE : `${title} | ${SITE_TITLE}`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="page-width site-header__inner">
+        <a href={withBase("/")} class="site-header__home">
+          <h1>{SITE_TITLE}</h1>
+        </a>
+        <p>{SITE_DESCRIPTION}</p>
+      </div>
+    </header>
+
+    <nav class="site-nav" aria-label="Main navigation">
+      <div class="page-width">
+        <ul>
+          {NAV_ITEMS.map((item) => (
+            <li>
+              <a
+                href={withBase(item.href)}
+                class:list={{ "is-active": currentPath === item.href }}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </nav>
+
+    <main class="page-width main-shell">
+      <div class:list={["content-grid", !showSidebar && "content-grid--single"]}>
+        <section class="main-column">
+          <slot />
+        </section>
+        {showSidebar && (
+          <aside class="sidebar-column">
+            <slot name="sidebar">
+              <Sidebar />
+            </slot>
+          </aside>
+        )}
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="page-width">
+        <p>© 2026 Wammy's House Squad. Built by L and the squad.</p>
+      </div>
+    </footer>
+  </body>
+</html>

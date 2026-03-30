@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">Player rotation board</title>
+  <desc id="desc">A second illustration for the classic template example post.</desc>
+  <rect width="1200" height="720" fill="#eaeaea" />
+  <rect x="95" y="95" width="1010" height="530" fill="#fbfbfb" stroke="#787878" stroke-width="6" />
+  <rect x="170" y="180" width="860" height="86" fill="#222222" />
+  <text x="220" y="235" fill="#f3f3f3" font-family="Arial, Helvetica, sans-serif" font-size="32">player rotation notes</text>
+  <circle cx="300" cy="420" r="78" fill="#d7e4d1" stroke="#6f855c" stroke-width="5" />
+  <circle cx="530" cy="420" r="78" fill="#e8dfcf" stroke="#8c7b58" stroke-width="5" />
+  <circle cx="760" cy="420" r="78" fill="#dae5f1" stroke="#61758f" stroke-width="5" />
+  <circle cx="990" cy="420" r="78" fill="#ead7da" stroke="#94656c" stroke-width="5" />
+  <text x="265" y="428" fill="#1f1f1f" font-family="Georgia, serif" font-size="28">A</text>
+  <text x="495" y="428" fill="#1f1f1f" font-family="Georgia, serif" font-size="28">B</text>
+  <text x="725" y="428" fill="#1f1f1f" font-family="Georgia, serif" font-size="28">C</text>
+  <text x="955" y="428" fill="#1f1f1f" font-family="Georgia, serif" font-size="28">D</text>
+  <line x1="378" y1="420" x2="452" y2="420" stroke="#3a3a3a" stroke-width="5" />
+  <line x1="608" y1="420" x2="682" y2="420" stroke="#3a3a3a" stroke-width="5" />
+  <line x1="838" y1="420" x2="912" y2="420" stroke="#3a3a3a" stroke-width="5" />
+</svg>

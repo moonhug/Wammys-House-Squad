@@ -1,0 +1,31 @@
+---
+import { getCollection } from "astro:content";
+import ArticleCard from "../../components/ArticleCard.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getPostsBySection } from "../../utils/posts";
+
+const posts = await getCollection("posts");
+const techPosts = getPostsBySection(posts, "tech");
+---
+
+<BaseLayout
+  title="Tech"
+  description="Reverse engineering notes, analysis logs, tooling guides, and collaborative technical write-ups."
+  currentPath="/tech"
+>
+  <section class="panel page-intro">
+    <h2>Tech Section</h2>
+    <p>
+      Reverse engineering, tooling, debugging notes, methodology write-ups, and
+      other technical posts that still fit the same shared publishing workflow.
+    </p>
+  </section>
+
+  <section class="panel">
+    <div class="article-list">
+      {techPosts.map((post) => (
+        <ArticleCard post={post} />
+      ))}
+    </div>
+  </section>
+</BaseLayout>

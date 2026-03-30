@@ -1,0 +1,7 @@
+---
+const { section } = Astro.props as { section: "tech" | "game" };
+---
+
+<span class:list={["section-badge", `section-badge--${section}`]}>
+  {section}
+</span>

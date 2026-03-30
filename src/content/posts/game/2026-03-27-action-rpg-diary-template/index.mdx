@@ -1,0 +1,86 @@
+---
+title: "Action RPG Diary Template Example"
+description: "A copyable advanced article example that uses a shared template for an HTML-like body while preserving the global blog shell."
+pubDate: 2026-03-27
+author: "Patch Notes Team"
+section: "game"
+tags:
+  - action-rpg
+  - diary
+  - template
+  - html-style
+draft: false
+heroImage: ./scene.svg
+readingTime: "9 min"
+template: "casual"
+---
+import Callout from "../../../../components/Callout.astro";
+import Figure from "../../../../components/Figure.astro";
+import GameInfo from "../../../../components/GameInfo.astro";
+import CasualArticleTemplate from "../../../../templates/CasualArticleTemplate.astro";
+import scene from "./scene.svg?url";
+import campNotes from "./camp-notes.svg?url";
+
+<CasualArticleTemplate
+  hook="This is the advanced workflow. The body can look more like handcrafted HTML, but the title, metadata, sidebar, and footer still come from the shared site layout."
+  quickFacts={[
+    { label: "Use case", value: "Detailed diary or special feature" },
+    { label: "Section", value: "game" },
+    { label: "Best format", value: "MDX with shared templates" },
+    { label: "What not to do", value: "Standalone full-page HTML" }
+  ]}
+>
+  <section class="template-panel">
+    <h2>Article Wrapper Example</h2>
+    <p>
+      The post layout already handles the title, description, meta line, tags, hero image,
+      sidebar, and footer. This template focuses on the body only.
+    </p>
+  </section>
+
+  <section class="template-panel">
+    <h2>Game Snapshot</h2>
+    <GameInfo
+      platform="PC / Steam Deck"
+      genre="Action RPG"
+      playtime="12 hours so far"
+      price="$19.99 on sale"
+    />
+  </section>
+
+  <Figure
+    src={scene}
+    alt="A stylized campsite and route board for a diary-style article."
+    caption="This figure plus the blocks below form the copyable HTML-like article body example."
+  />
+
+  <Figure
+    src={campNotes}
+    alt="A smaller notes board showing goals, loot, and route ideas."
+    caption="A second image inside the same template-based post helps demonstrate a fuller long-form layout."
+  />
+
+  <Callout title="Advanced workflow reminder" tone="warn">
+    Contributors should not create standalone HTML pages with their own navigation or footer.
+    Use the shared templates, edit the body slot, and let the site shell stay consistent.
+  </Callout>
+
+  <section class="template-panel">
+    <h2>Route Notes</h2>
+    <ul class="template-list">
+      <li>Open with a short mood check or session summary.</li>
+      <li>Add one image with a caption from the same post folder.</li>
+      <li>Use small info blocks for platform, time, and price.</li>
+      <li>Keep long experiments inside the body instead of changing the page shell.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Why this counts as HTML-style support</h2>
+    <p>
+      The article body is assembled with custom sections, components, and layout blocks,
+      but it still sits inside the shared Astro page structure. That is the safe and maintainable
+      version of a custom article.
+    </p>
+  </section>
+</CasualArticleTemplate>

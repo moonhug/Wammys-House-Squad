@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">Trace map figure</title>
+  <desc id="desc">A second diagram showing a short investigation route for a tech template example.</desc>
+  <rect width="1200" height="720" fill="#ededed" />
+  <rect x="100" y="90" width="1000" height="540" fill="#fbfbfb" stroke="#767676" stroke-width="6" />
+  <circle cx="240" cy="250" r="88" fill="#dbe5f4" stroke="#60789c" stroke-width="5" />
+  <circle cx="600" cy="250" r="88" fill="#ece5d6" stroke="#8d7a55" stroke-width="5" />
+  <circle cx="960" cy="250" r="88" fill="#dfe9d6" stroke="#69824f" stroke-width="5" />
+  <rect x="380" y="420" width="440" height="110" fill="#f0f0f0" stroke="#7d7d7d" stroke-width="4" />
+  <text x="182" y="258" fill="#1f1f1f" font-family="Arial, Helvetica, sans-serif" font-size="28">entry</text>
+  <text x="527" y="258" fill="#1f1f1f" font-family="Arial, Helvetica, sans-serif" font-size="28">decode</text>
+  <text x="886" y="258" fill="#1f1f1f" font-family="Arial, Helvetica, sans-serif" font-size="28">docs</text>
+  <text x="450" y="485" fill="#1f1f1f" font-family="Arial, Helvetica, sans-serif" font-size="28">shared notes for the write-up</text>
+  <line x1="328" y1="250" x2="512" y2="250" stroke="#3a3a3a" stroke-width="5" />
+  <line x1="688" y1="250" x2="872" y2="250" stroke="#3a3a3a" stroke-width="5" />
+  <line x1="600" y1="338" x2="600" y2="420" stroke="#3a3a3a" stroke-width="5" />
+</svg>

@@ -1,0 +1,38 @@
+---
+interface Props {
+  context?: string;
+  checklist?: string[];
+  warning?: string;
+}
+
+const { context, checklist = [], warning } = Astro.props as Props;
+---
+
+<div class="template-article template-article--tech">
+  {context && (
+    <section class="template-panel">
+      <h2>Context</h2>
+      <p>{context}</p>
+    </section>
+  )}
+
+  {checklist.length > 0 && (
+    <section class="template-panel">
+      <h2>Checklist</h2>
+      <ol class="template-list template-list--ordered">
+        {checklist.map((item) => (
+          <li>{item}</li>
+        ))}
+      </ol>
+    </section>
+  )}
+
+  {warning && (
+    <section class="template-panel template-panel--warning">
+      <h2>Before You Start</h2>
+      <p>{warning}</p>
+    </section>
+  )}
+
+  <slot />
+</div>

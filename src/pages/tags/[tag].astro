@@ -1,0 +1,44 @@
+---
+import { getCollection, type CollectionEntry } from "astro:content";
+import ArticleCard from "../../components/ArticleCard.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getAllTags, getVisibleSortedPosts } from "../../utils/posts";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("posts");
+  const visiblePosts = getVisibleSortedPosts(posts);
+
+  return getAllTags(visiblePosts).map((tag) => ({
+    params: { tag: tag.slug },
+    props: {
+      label: tag.label,
+      posts: tag.posts
+    }
+  }));
+}
+
+const { tag } = Astro.params;
+const { label, posts } = Astro.props as {
+  label: string;
+  posts: CollectionEntry<"posts">[];
+};
+---
+
+<BaseLayout
+  title={`Tag: ${label}`}
+  description={`Posts filed under ${label}.`}
+  currentPath="/tags"
+>
+  <section class="panel page-intro">
+    <h2>#{label}</h2>
+    <p>Normalized URL: <code>/tags/{tag}</code></p>
+  </section>
+
+  <section class="panel">
+    <div class="article-list">
+      {posts.map((post) => (
+        <ArticleCard post={post} />
+      ))}
+    </div>
+  </section>
+</BaseLayout>

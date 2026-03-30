@@ -1,0 +1,33 @@
+---
+import type { CollectionEntry } from "astro:content";
+import PostMeta from "./PostMeta.astro";
+import SectionBadge from "./SectionBadge.astro";
+import TagList from "./TagList.astro";
+import { getPostUrl, resolvePostAsset } from "../utils/posts";
+
+const { post } = Astro.props as { post: CollectionEntry<"posts"> };
+const heroImage = resolvePostAsset(post, post.data.heroImage);
+---
+
+<article class="article-card">
+  {heroImage && (
+    <a class="article-card__media" href={getPostUrl(post)}>
+      <img src={heroImage} alt="" loading="lazy" />
+    </a>
+  )}
+  <div class="article-card__body">
+    <div class="article-card__heading">
+      <SectionBadge section={post.data.section} />
+      <h2>
+        <a href={getPostUrl(post)}>{post.data.title}</a>
+      </h2>
+    </div>
+    <PostMeta
+      pubDate={post.data.pubDate}
+      updatedDate={post.data.updatedDate}
+      author={post.data.author}
+    />
+    <p class="article-card__description">{post.data.description}</p>
+    <TagList tags={post.data.tags} />
+  </div>
+</article>

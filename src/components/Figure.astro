@@ -1,0 +1,15 @@
+---
+interface Props {
+  src: string | { src: string };
+  alt: string;
+  caption?: string;
+}
+
+const { src, alt, caption } = Astro.props as Props;
+const normalizedSrc = typeof src === "string" ? src : src.src;
+---
+
+<figure class="article-figure">
+  <img src={normalizedSrc} alt={alt} loading="lazy" />
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>

@@ -1,0 +1,29 @@
+---
+interface Props {
+  platform: string;
+  genre: string;
+  playtime: string;
+  price: string;
+}
+
+const { platform, genre, playtime, price } = Astro.props as Props;
+---
+
+<dl class="game-info">
+  <div>
+    <dt>Platform</dt>
+    <dd>{platform}</dd>
+  </div>
+  <div>
+    <dt>Genre</dt>
+    <dd>{genre}</dd>
+  </div>
+  <div>
+    <dt>Playtime</dt>
+    <dd>{playtime}</dd>
+  </div>
+  <div>
+    <dt>Price</dt>
+    <dd>{price}</dd>
+  </div>
+</dl>

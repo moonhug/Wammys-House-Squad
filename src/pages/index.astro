@@ -1,0 +1,58 @@
+---
+import { getCollection } from "astro:content";
+import ArticleCard from "../components/ArticleCard.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getFeaturedPosts, getVisibleSortedPosts } from "../utils/posts";
+
+const posts = await getCollection("posts");
+const visiblePosts = getVisibleSortedPosts(posts);
+const featuredPosts = getFeaturedPosts(posts);
+const featuredIds = new Set(featuredPosts.map((post) => post.id));
+const latestPosts = visiblePosts
+  .filter((post) => !featuredIds.has(post.id))
+  .slice(0, 6);
+---
+
+<BaseLayout currentPath="/">
+  <section class="panel page-intro">
+    <h2>Notes on Games, and the Ways We Read Them</h2>
+    <p class="page-intro__lead">
+      Wammy&apos;s House Squad is a place for people who love games not only to play
+      them, but to read them closely, question them, and leave thoughtful records
+      behind. Here, L and the juniors gather reviews, field notes, technical observations,
+      and small discoveries that emerge from seeing games both as players and as curious minds.
+    </p>
+    <p class="page-intro__local" lang="ko">
+      와미즈 하우스 스쿼드는 게임을 좋아하고 탐구하며, 때로는 기술적으로,
+      때로는 게이머로서 느끼는 것들을 차분히 기록해 두는 곳입니다.
+      엘과 주니어들이 자유롭게 아티클을 올리고, 게임이라는 하나의 큰 카테고리 안에서
+      생각과 경험을 나누며 함께 자라나는 교류의 장이기도 합니다.
+    </p>
+  </section>
+
+  {featuredPosts.length > 0 && (
+    <section class="panel">
+      <div class="section-heading">
+        <h2>Featured Posts</h2>
+        <p>Highlighted pieces that show the different writing workflows in this repo.</p>
+      </div>
+      <div class="article-list">
+        {featuredPosts.map((post) => (
+          <ArticleCard post={post} />
+        ))}
+      </div>
+    </section>
+  )}
+
+  <section class="panel">
+    <div class="section-heading">
+      <h2>Latest Posts</h2>
+      <p>Recent articles from both the tech and game sections.</p>
+    </div>
+    <div class="article-list">
+      {latestPosts.map((post) => (
+        <ArticleCard post={post} />
+      ))}
+    </div>
+  </section>
+</BaseLayout>

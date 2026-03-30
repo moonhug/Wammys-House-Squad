@@ -1,0 +1,23 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { formatDate, getPostUrl } from "../utils/posts";
+
+interface Props {
+  posts: CollectionEntry<"posts">[];
+  title?: string;
+}
+
+const { posts, title = "Recent Posts" } = Astro.props as Props;
+---
+
+<section class="sidebar-block">
+  <h2 class="sidebar-block__title">{title}</h2>
+  <ul class="recent-posts">
+    {posts.map((post) => (
+      <li>
+        <a href={getPostUrl(post)}>{post.data.title}</a>
+        <span>{formatDate(post.data.pubDate)}</span>
+      </li>
+    ))}
+  </ul>
+</section>

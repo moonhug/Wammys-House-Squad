@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">Squad weekend board</title>
+  <desc id="desc">A retro board for the Korean squad weekend picks article.</desc>
+  <rect width="1200" height="720" fill="#e9e9e9" />
+  <rect x="84" y="84" width="1032" height="552" fill="#fbfbfb" stroke="#777" stroke-width="6" />
+  <rect x="140" y="130" width="920" height="90" fill="#212121" />
+  <text x="190" y="188" fill="#f3f3f3" font-family="Arial, Helvetica, sans-serif" font-size="34">wammy's house squad weekend board</text>
+  <rect x="160" y="280" width="260" height="220" fill="#e5ddcf" stroke="#8d7a57" stroke-width="4" />
+  <rect x="470" y="280" width="260" height="220" fill="#dde8f2" stroke="#607792" stroke-width="4" />
+  <rect x="780" y="280" width="260" height="220" fill="#dfe8d7" stroke="#6a824f" stroke-width="4" />
+  <text x="210" y="350" fill="#1f1f1f" font-family="Georgia, serif" font-size="30">quick laughs</text>
+  <text x="520" y="350" fill="#1f1f1f" font-family="Georgia, serif" font-size="30">co-op run</text>
+  <text x="835" y="350" fill="#1f1f1f" font-family="Georgia, serif" font-size="30">slow talk</text>
+  <text x="205" y="410" fill="#1f1f1f" font-family="Arial, Helvetica, sans-serif" font-size="22">20 to 30 min</text>
+  <text x="515" y="410" fill="#1f1f1f" font-family="Arial, Helvetica, sans-serif" font-size="22">one mission</text>
+  <text x="835" y="410" fill="#1f1f1f" font-family="Arial, Helvetica, sans-serif" font-size="22">story first</text>
+</svg>

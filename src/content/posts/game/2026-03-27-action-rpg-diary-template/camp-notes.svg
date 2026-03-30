@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">Camp notes board</title>
+  <desc id="desc">A second visual for the casual template example.</desc>
+  <rect width="1200" height="720" fill="#e7e7e7" />
+  <rect x="90" y="90" width="1020" height="540" fill="#fcfcfc" stroke="#757575" stroke-width="6" />
+  <rect x="145" y="150" width="910" height="80" fill="#232323" />
+  <text x="195" y="202" fill="#f3f3f3" font-family="Arial, Helvetica, sans-serif" font-size="30">camp goals and route notes</text>
+  <rect x="170" y="285" width="250" height="210" fill="#e8dfcf" stroke="#8f7c58" stroke-width="4" />
+  <rect x="475" y="285" width="250" height="210" fill="#dfe9d6" stroke="#6d8451" stroke-width="4" />
+  <rect x="780" y="285" width="250" height="210" fill="#dce5f1" stroke="#617899" stroke-width="4" />
+  <text x="205" y="350" fill="#1f1f1f" font-family="Georgia, serif" font-size="28">loot</text>
+  <text x="510" y="350" fill="#1f1f1f" font-family="Georgia, serif" font-size="28">camp</text>
+  <text x="815" y="350" fill="#1f1f1f" font-family="Georgia, serif" font-size="28">route</text>
+  <text x="205" y="405" fill="#1f1f1f" font-family="Arial, Helvetica, sans-serif" font-size="22">new spear</text>
+  <text x="510" y="405" fill="#1f1f1f" font-family="Arial, Helvetica, sans-serif" font-size="22">upgrade fire</text>
+  <text x="815" y="405" fill="#1f1f1f" font-family="Arial, Helvetica, sans-serif" font-size="22">southern pass</text>
+</svg>

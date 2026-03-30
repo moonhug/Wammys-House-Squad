@@ -1,0 +1,17 @@
+---
+import { formatDate } from "../utils/posts";
+
+interface Props {
+  pubDate: Date;
+  updatedDate?: Date;
+  author: string;
+}
+
+const { pubDate, updatedDate, author } = Astro.props as Props;
+---
+
+<p class="post-meta">
+  <span>Published on {formatDate(pubDate)}</span>
+  <span>by {author}</span>
+  {updatedDate && <span>Updated {formatDate(updatedDate)}</span>}
+</p>

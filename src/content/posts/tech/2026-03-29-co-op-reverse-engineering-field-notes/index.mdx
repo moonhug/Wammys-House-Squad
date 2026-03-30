@@ -1,0 +1,94 @@
+---
+title: "Tech Template Example: Co-op Reverse Engineering Field Notes"
+description: "A richer MDX post showing the TechArticleTemplate, shared components, and multiple local images inside one post folder."
+pubDate: 2026-03-29
+author: "Dabin + Juniors"
+section: "tech"
+tags:
+  - reverse-engineering
+  - collaboration
+  - notes
+  - mdx
+draft: false
+heroImage: ./diagram.svg
+featured: true
+readingTime: "8 min"
+template: "tech"
+---
+import Callout from "../../../../components/Callout.astro";
+import Figure from "../../../../components/Figure.astro";
+import ProsCons from "../../../../components/ProsCons.astro";
+import TechArticleTemplate from "../../../../templates/TechArticleTemplate.astro";
+import diagram from "./diagram.svg?url";
+import traceMap from "./trace-map.svg?url";
+
+<TechArticleTemplate
+  context="This sample article uses MDX when plain Markdown starts to feel too cramped. The layout, metadata, sidebar, and footer still come from the shared site shell."
+  checklist={[
+    "Start with the visible strings and menu labels.",
+    "Rename helper functions before writing conclusions.",
+    "Keep screenshots and diagrams inside the post folder.",
+    "Document uncertainty instead of pretending the first pass is complete."
+  ]}
+  warning="Do not turn MDX posts into custom one-off pages. The goal is richer article bodies, not custom chrome."
+>
+  <Callout title="Collaboration rule" tone="info">
+    When several people inspect the same target, write the stable findings first and leave open questions as a separate section.
+  </Callout>
+
+  <section>
+    <h2>What we tracked first</h2>
+    <p>
+      We started from user-facing strings, mapped the surrounding helper calls, and only
+      then guessed at the broader flow. That kept the article grounded in visible evidence.
+    </p>
+  </section>
+
+  <Figure
+    src={diagram}
+    alt="A small flow diagram connecting strings, helper calls, and article notes."
+    caption="A lightweight diagram can be enough for the first pass. It does not need to look polished to be useful."
+  />
+
+  <section>
+    <h2>Second image example</h2>
+    <p>
+      Template example posts should also demonstrate that a single article can carry more than one
+      colocated image without changing anything about the surrounding site layout.
+    </p>
+  </section>
+
+  <Figure
+    src={traceMap}
+    alt="A route map connecting a start point, a decode step, and a documentation pass."
+    caption="This second figure is here on purpose so contributors can copy a multi-image article pattern."
+  />
+
+  <section>
+    <h2>Why MDX helps here</h2>
+    <p>
+      The reusable callout, figure, and comparison blocks make the article easier to scan
+      without forcing contributors to build page structure from scratch.
+    </p>
+  </section>
+
+  <ProsCons
+    pros={[
+      "Shared components keep the post body structured.",
+      "Junior contributors can reuse existing patterns quickly.",
+      "Local images stay near the post."
+    ]}
+    cons={[
+      "MDX is slightly more complex than Markdown.",
+      "It is easier to over-design the article body if no one reviews the structure."
+    ]}
+  />
+
+  <section>
+    <h2>Takeaway</h2>
+    <p>
+      Use MDX when the body clearly benefits from components. If the article is still mostly
+      headings and paragraphs, fall back to regular Markdown.
+    </p>
+  </section>
+</TechArticleTemplate>

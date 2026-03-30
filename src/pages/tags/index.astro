@@ -1,0 +1,30 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getAllTags, getVisibleSortedPosts } from "../../utils/posts";
+import { withBase } from "../../utils/site";
+
+const posts = await getCollection("posts");
+const tags = getAllTags(getVisibleSortedPosts(posts));
+---
+
+<BaseLayout title="Tags" description="Browse every tag used across tech and game posts." currentPath="/tags">
+  <section class="panel page-intro">
+    <h2>Tags Archive</h2>
+    <p>
+      Top-level sections stay strict, while tags stay flexible. This archive is where
+      contributors can branch into niche topics without breaking the overall structure.
+    </p>
+  </section>
+
+  <section class="panel tag-archive">
+    <ul class="tag-archive__list">
+      {tags.map((tag) => (
+        <li>
+          <a href={withBase(`/tags/${tag.slug}`)}>{tag.label}</a>
+          <span>{tag.count} posts</span>
+        </li>
+      ))}
+    </ul>
+  </section>
+</BaseLayout>

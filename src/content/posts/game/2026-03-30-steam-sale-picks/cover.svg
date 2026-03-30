@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">Steam sale picks cover</title>
+  <desc id="desc">A simple bulletin-board style cover for a game recommendation post.</desc>
+  <rect width="1200" height="720" fill="#e3e3e3" />
+  <rect x="70" y="70" width="1060" height="580" fill="#fbfbfb" stroke="#7d7d7d" stroke-width="6" />
+  <rect x="110" y="110" width="980" height="88" fill="#212121" />
+  <text x="140" y="166" fill="#f3f3f3" font-family="Arial, Helvetica, sans-serif" font-size="34">steam sale picks</text>
+  <rect x="140" y="250" width="250" height="260" fill="#ece9d2" stroke="#8c845f" stroke-width="4" />
+  <rect x="475" y="250" width="250" height="260" fill="#dce6f1" stroke="#62748b" stroke-width="4" />
+  <rect x="810" y="250" width="250" height="260" fill="#e7dccf" stroke="#947857" stroke-width="4" />
+  <text x="175" y="315" fill="#202020" font-family="Georgia, serif" font-size="28">puzzle</text>
+  <text x="510" y="315" fill="#202020" font-family="Georgia, serif" font-size="28">co-op</text>
+  <text x="845" y="315" fill="#202020" font-family="Georgia, serif" font-size="28">strategy</text>
+  <text x="175" y="385" fill="#202020" font-family="Arial, Helvetica, sans-serif" font-size="20">one evening</text>
+  <text x="510" y="385" fill="#202020" font-family="Arial, Helvetica, sans-serif" font-size="20">friend group</text>
+  <text x="845" y="385" fill="#202020" font-family="Arial, Helvetica, sans-serif" font-size="20">long shelf life</text>
+  <line x1="140" y1="545" x2="1060" y2="545" stroke="#7d7d7d" stroke-width="4" />
+  <text x="142" y="590" fill="#4c4c4c" font-family="Arial, Helvetica, sans-serif" font-size="22">calm weekend recommendations with simple tags and markdown-only editing</text>
+</svg>

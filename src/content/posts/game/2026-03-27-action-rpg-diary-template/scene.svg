@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">Action RPG diary template scene</title>
+  <desc id="desc">A route board and camp illustration for a template-based article example.</desc>
+  <rect width="1200" height="720" fill="#e8e8e8" />
+  <rect x="82" y="82" width="1036" height="556" fill="#fbfbfb" stroke="#7d7d7d" stroke-width="6" />
+  <rect x="130" y="130" width="360" height="420" fill="#e4dfcf" stroke="#8d7d59" stroke-width="4" />
+  <rect x="560" y="130" width="510" height="120" fill="#e0ead9" stroke="#6e8557" stroke-width="4" />
+  <rect x="560" y="295" width="510" height="255" fill="#e7edf5" stroke="#667d9e" stroke-width="4" />
+  <circle cx="265" cy="325" r="78" fill="#d2b18c" stroke="#885f39" stroke-width="4" />
+  <rect x="214" y="402" width="102" height="82" fill="#6d4f30" />
+  <text x="605" y="205" fill="#1f1f1f" font-family="Georgia, serif" font-size="32">camp diary</text>
+  <text x="605" y="370" fill="#1f1f1f" font-family="Arial, Helvetica, sans-serif" font-size="26">route A</text>
+  <text x="605" y="430" fill="#1f1f1f" font-family="Arial, Helvetica, sans-serif" font-size="26">route B</text>
+  <text x="605" y="490" fill="#1f1f1f" font-family="Arial, Helvetica, sans-serif" font-size="26">route C</text>
+</svg>

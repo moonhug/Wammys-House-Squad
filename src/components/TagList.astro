@@ -1,0 +1,18 @@
+---
+import { normalizeTag } from "../utils/posts";
+import { withBase } from "../utils/site";
+
+const { tags = [] } = Astro.props as { tags?: string[] };
+---
+
+{
+  tags.length > 0 && (
+    <ul class="tag-list" aria-label="Post tags">
+      {tags.map((tag) => (
+        <li>
+          <a href={withBase(`/tags/${normalizeTag(tag)}`)}>#{tag}</a>
+        </li>
+      ))}
+    </ul>
+  )
+}

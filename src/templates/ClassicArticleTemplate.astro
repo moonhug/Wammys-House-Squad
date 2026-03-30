@@ -1,0 +1,25 @@
+---
+interface Props {
+  lede?: string;
+  highlights?: string[];
+}
+
+const { lede, highlights = [] } = Astro.props as Props;
+---
+
+<div class="template-article template-article--classic">
+  {lede && <p class="template-article__lede">{lede}</p>}
+
+  {highlights.length > 0 && (
+    <section class="template-panel">
+      <h2>Quick Notes</h2>
+      <ul class="template-list">
+        {highlights.map((highlight) => (
+          <li>{highlight}</li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  <slot />
+</div>
