@@ -122,6 +122,15 @@ This project includes a GitHub Pages workflow at `.github/workflows/deploy.yml`.
 - Recommended Pages URL: `https://moonhug.github.io/wammys-house-squad/`
 - The Astro config derives the `base` path automatically in GitHub Actions from the repository name.
 
+### Custom domain
+
+If you are using a custom domain such as `wammys.uk`:
+
+1. Add the domain to `public/CNAME`.
+2. Configure the GitHub Pages custom domain in repository settings.
+3. Add the required DNS records in your DNS provider.
+4. Push to `main` again so the site rebuilds with the root domain path instead of the repository path.
+
 High-level deployment flow:
 
 1. Create a GitHub repository.
