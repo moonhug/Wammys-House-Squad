@@ -110,6 +110,7 @@ Optional fields:
 
 ## Contributor docs
 
+- `JUNIOR-README.md`
 - `docs/writing-guide.md`
 - `docs/tag-style-guide.md`
 - `docs/html-template-guide.md`
