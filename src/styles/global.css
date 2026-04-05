@@ -34,6 +34,7 @@ body {
 img {
   display: block;
   max-width: 100%;
+  height: auto;
 }
 
 a {
@@ -420,6 +421,12 @@ pre {
 .post-body code {
   padding: 0.1em 0.28em;
   background: #efefef;
+}
+
+.post-body p > img {
+  margin: 0 auto;
+  border: 1px solid var(--border);
+  background: #fafafa;
 }
 
 .callout {
