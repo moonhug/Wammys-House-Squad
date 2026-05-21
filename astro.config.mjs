@@ -1,6 +1,7 @@
 import { defineConfig } from "astro/config";
 import mdx from "@astrojs/mdx";
 import { readFileSync } from "node:fs";
+import rehypeFootnoteSections from "./src/utils/rehypeFootnoteSections.js";
 
 const repository = process.env.GITHUB_REPOSITORY?.split("/")[1];
 const isUserSite = repository === "moonhug.github.io";
@@ -13,7 +14,10 @@ try {
 }
 
 export default defineConfig({
-  integrations: [mdx()],
+  integrations: [mdx({ rehypePlugins: [rehypeFootnoteSections] })],
+  markdown: {
+    rehypePlugins: [rehypeFootnoteSections]
+  },
   output: "static",
   site: customDomain ? `https://${customDomain}` : "https://moonhug.github.io",
   base: customDomain ? undefined : repository && !isUserSite ? `/${repository}` : undefined,

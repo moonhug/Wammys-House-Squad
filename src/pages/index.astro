@@ -2,11 +2,13 @@
 import { getCollection } from "astro:content";
 import ArticleCard from "../components/ArticleCard.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { getFeaturedPosts, getVisibleSortedPosts } from "../utils/posts";
+import { getFeaturedPosts, getPostSlug, getVisibleSortedPosts } from "../utils/posts";
 
 const posts = await getCollection("posts");
 const visiblePosts = getVisibleSortedPosts(posts);
-const featuredPosts = getFeaturedPosts(posts);
+const featuredPosts = getFeaturedPosts(posts).filter(
+  (post) => getPostSlug(post) === "2026-04-05-wammys-house-squad-intro"
+);
 const featuredIds = new Set(featuredPosts.map((post) => post.id));
 const latestPosts = visiblePosts
   .filter((post) => !featuredIds.has(post.id))

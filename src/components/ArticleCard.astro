@@ -9,7 +9,7 @@ const { post } = Astro.props as { post: CollectionEntry<"posts"> };
 const heroImage = resolvePostAsset(post, post.data.heroImage);
 ---
 
-<article class="article-card">
+<article class:list={["article-card", !heroImage && "article-card--no-media"]}>
   {heroImage && (
     <a class="article-card__media" href={getPostUrl(post)}>
       <img src={heroImage} alt="" loading="lazy" />
