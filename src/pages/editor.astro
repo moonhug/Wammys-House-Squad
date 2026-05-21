@@ -1,0 +1,2188 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const postSources = import.meta.glob("../content/posts/**/*.{md,mdx}", {
+  query: "?raw",
+  import: "default",
+  eager: true
+}) as Record<string, string>;
+
+const assetSources = import.meta.glob("../content/posts/**/*.{png,jpg,jpeg,gif,webp,avif,svg}", {
+  query: "?url",
+  import: "default",
+  eager: true
+}) as Record<string, string>;
+
+function toContentPath(modulePath: string) {
+  return modulePath.replace("../content/posts/", "");
+}
+
+const availablePosts = Object.entries(postSources)
+  .map(([modulePath, source]) => {
+    const path = toContentPath(modulePath);
+    const folder = path.replace(/\/index\.(mdx|md)$/u, "");
+
+    return {
+      path,
+      label: path,
+      folder,
+      source
+    };
+  })
+  .sort((a, b) => a.path.localeCompare(b.path));
+
+const assetMap = Object.fromEntries(
+  Object.entries(assetSources).map(([modulePath, url]) => [toContentPath(modulePath), url])
+);
+
+const postsJson = JSON.stringify(availablePosts).replace(/</gu, "\\u003c");
+const assetsJson = JSON.stringify(assetMap).replace(/</gu, "\\u003c");
+---
+
+<BaseLayout title="MDX Editor" currentPath="/editor" showSidebar={false}>
+  <section class="editor-shell" data-editor-app>
+    <header class="editor-topbar panel">
+      <div class="editor-title">
+        <p>MDX Editor</p>
+        <h2>Post Editor</h2>
+      </div>
+
+      <div class="editor-filebar" aria-label="Editor actions">
+        <label class="editor-select-label" for="postSelect">기존 글</label>
+        <select id="postSelect">
+          <option value="">새 글</option>
+          {availablePosts.map((post) => <option value={post.path}>{post.label}</option>)}
+        </select>
+        <label class="editor-button" for="postFileInput">
+          불러오기
+          <input id="postFileInput" type="file" accept=".md,.mdx,text/markdown,text/mdx" />
+        </label>
+        <button type="button" id="copyButton">복사</button>
+        <button type="button" id="downloadButton">내보내기</button>
+        <button type="button" id="previewButton" class="editor-button--primary">미리보기 갱신</button>
+      </div>
+    </header>
+
+    <div class="editor-workspace">
+      <section class="editor-column panel" aria-labelledby="editorHeading">
+        <div class="editor-column-head">
+          <h2 id="editorHeading">본문 에디터</h2>
+          <span id="documentStatus">새 글</span>
+        </div>
+
+        <label class="editor-field">
+          <span>제목</span>
+          <input id="titleInput" type="text" autocomplete="off" />
+        </label>
+
+        <div class="editor-field">
+          <span>태그</span>
+          <div class="tag-editor" aria-label="Post tags">
+            <div id="tagChips" class="tag-editor__chips"></div>
+            <div class="tag-editor__entry">
+              <input id="tagInput" type="text" autocomplete="off" placeholder="#intro" />
+              <button type="button" id="addTagButton">추가</button>
+            </div>
+          </div>
+        </div>
+
+        <details class="editor-details">
+          <summary>Frontmatter</summary>
+          <textarea id="frontmatterInput" spellcheck="false"></textarea>
+        </details>
+
+        <details class="editor-details">
+          <summary>MDX imports</summary>
+          <textarea id="importsInput" spellcheck="false"></textarea>
+        </details>
+
+        <div class="editor-toolbar" aria-label="Formatting toolbar">
+          <select id="blockFormat" title="문단 형식">
+            <option value="P">본문</option>
+            <option value="H2">H2</option>
+            <option value="H3">H3</option>
+            <option value="H4">H4</option>
+          </select>
+          <button type="button" data-command="bold" title="굵게"><strong>B</strong></button>
+          <button type="button" data-command="italic" title="기울임"><em>I</em></button>
+          <button type="button" data-command="strikeThrough" title="취소선"><s>S</s></button>
+          <button type="button" id="inlineCodeButton" title="인라인 코드">`</button>
+          <button type="button" data-command="insertUnorderedList" title="글머리 목록">•</button>
+          <button type="button" data-command="insertOrderedList" title="번호 목록">1.</button>
+          <button type="button" id="tableButton" title="표">▦</button>
+          <button type="button" id="quoteButton" title="인용">❝</button>
+          <button type="button" id="linkButton" title="링크">↗</button>
+          <button type="button" id="footnoteButton" title="각주">[^]</button>
+          <label class="toolbar-upload" title="이미지">
+            +IMG
+            <input id="imageInput" type="file" accept="image/*" />
+          </label>
+        </div>
+
+        <div id="richEditor" class="rich-editor" contenteditable="true" aria-label="본문 편집기"></div>
+
+        <footer class="editor-meta">
+          <span id="fileStatus">index.mdx</span>
+          <span id="wordStatus">0 words</span>
+        </footer>
+      </section>
+
+      <section class="preview-column panel" aria-labelledby="previewHeading">
+        <div class="preview-head">
+          <h2 id="previewHeading">MDX 미리보기</h2>
+          <span id="previewStatus">대기 중</span>
+        </div>
+        <article id="previewPane" class="post-article preview-article">
+          <div class="preview-empty">미리보기 갱신</div>
+        </article>
+      </section>
+    </div>
+  </section>
+
+  <script is:inline type="application/json" id="editor-posts" set:html={postsJson}></script>
+  <script is:inline type="application/json" id="editor-assets" set:html={assetsJson}></script>
+
+  <script is:inline>
+    const posts = JSON.parse(document.getElementById("editor-posts").textContent);
+    const assetMap = JSON.parse(document.getElementById("editor-assets").textContent);
+    const uploadedAssetMap = new Map();
+
+    const postSelect = document.getElementById("postSelect");
+    const postFileInput = document.getElementById("postFileInput");
+    const imageInput = document.getElementById("imageInput");
+    const richEditor = document.getElementById("richEditor");
+    const titleInput = document.getElementById("titleInput");
+    const tagChips = document.getElementById("tagChips");
+    const tagInput = document.getElementById("tagInput");
+    const addTagButton = document.getElementById("addTagButton");
+    const frontmatterInput = document.getElementById("frontmatterInput");
+    const importsInput = document.getElementById("importsInput");
+    const blockFormat = document.getElementById("blockFormat");
+    const previewPane = document.getElementById("previewPane");
+    const previewStatus = document.getElementById("previewStatus");
+    const documentStatus = document.getElementById("documentStatus");
+    const fileStatus = document.getElementById("fileStatus");
+    const wordStatus = document.getElementById("wordStatus");
+
+    let currentFolder = "";
+    let currentFileName = "index.mdx";
+    let draggingImage = null;
+    let lastSelectionRange = null;
+    const imageAssetDirectory = "images";
+
+    const defaultFrontmatter = `title: "새 글"
+description: "요약을 입력하세요."
+pubDate: 2026-05-20
+author: "Dabin"
+section: "tech"
+tags:
+  - draft
+draft: true
+readingTime: "5 min"`;
+
+    const defaultBody = `<p>여기에 본문을 입력하세요.</p>`;
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/gu, "&amp;")
+        .replace(/</gu, "&lt;")
+        .replace(/>/gu, "&gt;")
+        .replace(/"/gu, "&quot;");
+    }
+
+    function escapeAttribute(value) {
+      return escapeHtml(value).replace(/'/gu, "&#39;");
+    }
+
+    function normalizePath(value) {
+      return value.replace(/^\.?\//u, "").replace(/^\/+/u, "");
+    }
+
+    function resolveAssetUrl(src) {
+      if (!src) {
+        return "";
+      }
+
+      if (/^(https?:|data:|blob:|\/)/u.test(src)) {
+        return src;
+      }
+
+      const normalizedSrc = normalizePath(src);
+      const uploadUrl = uploadedAssetMap.get(normalizedSrc) || uploadedAssetMap.get(src);
+
+      if (uploadUrl) {
+        return uploadUrl;
+      }
+
+      if (currentFolder) {
+        return assetMap[`${currentFolder}/${normalizedSrc}`] || src;
+      }
+
+      return src;
+    }
+
+    function slugifyFileName(fileName) {
+      const cleaned = fileName
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/gu, "-")
+        .replace(/[^a-z0-9._-]/gu, "-")
+        .replace(/-+/gu, "-");
+
+      return cleaned || "image";
+    }
+
+    function createImageMarkdownSrc(fileName) {
+      return `./${imageAssetDirectory}/${fileName}`;
+    }
+
+    function parseDocument(source) {
+      const normalized = source.replace(/\r\n?/gu, "\n");
+      const frontmatterMatch = normalized.match(/^---\s*\n([\s\S]*?)\n---\s*(?:\n|$)/u);
+      const frontmatter = frontmatterMatch ? frontmatterMatch[1].trim() : defaultFrontmatter;
+      let body = frontmatterMatch ? normalized.slice(frontmatterMatch[0].length) : normalized;
+      const importLines = [];
+      const bodyLines = body.split("\n");
+
+      while (bodyLines.length > 0) {
+        const line = bodyLines[0];
+
+        if (line.trim() === "") {
+          if (importLines.length > 0) {
+            bodyLines.shift();
+            break;
+          }
+
+          bodyLines.shift();
+          continue;
+        }
+
+        if (/^import\s/u.test(line.trim())) {
+          importLines.push(bodyLines.shift());
+          continue;
+        }
+
+        break;
+      }
+
+      body = bodyLines.join("\n").trim();
+
+      return {
+        frontmatter,
+        imports: importLines.join("\n"),
+        body
+      };
+    }
+
+    function parseYaml(frontmatter) {
+      const data = {};
+      const lines = frontmatter.split("\n");
+
+      for (let index = 0; index < lines.length; index += 1) {
+        const line = lines[index];
+        const field = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/u);
+
+        if (!field) {
+          continue;
+        }
+
+        const key = field[1];
+        const rawValue = field[2].trim();
+
+        if (rawValue === "") {
+          const list = [];
+          let lookahead = index + 1;
+
+          while (lookahead < lines.length) {
+            const item = lines[lookahead].match(/^\s*-\s*(.*)$/u);
+
+            if (!item) {
+              break;
+            }
+
+            list.push(stripYamlQuotes(item[1].trim()));
+            lookahead += 1;
+          }
+
+          if (list.length > 0) {
+            data[key] = list;
+          }
+        } else if (/^\[.*\]$/u.test(rawValue)) {
+          data[key] = rawValue
+            .replace(/^\[|\]$/gu, "")
+            .split(",")
+            .map((item) => stripYamlQuotes(item.trim()))
+            .filter(Boolean);
+        } else {
+          data[key] = stripYamlQuotes(rawValue);
+        }
+      }
+
+      return data;
+    }
+
+    function stripYamlQuotes(value) {
+      return value.replace(/^["']|["']$/gu, "");
+    }
+
+    function setYamlField(source, key, value, insertAfterKeys = []) {
+      const escapedValue = `"${value.replace(/\\/gu, "\\\\").replace(/"/gu, '\\"')}"`;
+      const lines = source.split("\n");
+      const fieldIndex = lines.findIndex((line) => new RegExp(`^${key}:`, "u").test(line));
+
+      if (fieldIndex >= 0) {
+        lines[fieldIndex] = `${key}: ${escapedValue}`;
+      } else {
+        const insertAfterIndex = insertAfterKeys
+          .map((candidateKey) => lines.findIndex((line) => new RegExp(`^${candidateKey}:`, "u").test(line)))
+          .find((index) => index >= 0);
+
+        if (insertAfterIndex >= 0) {
+          lines.splice(insertAfterIndex + 1, 0, `${key}: ${escapedValue}`);
+        } else {
+          lines.push(`${key}: ${escapedValue}`);
+        }
+      }
+
+      return lines.join("\n");
+    }
+
+    function setHeroImageIfMissing(mdSrc) {
+      const yaml = parseYaml(frontmatterInput.value || defaultFrontmatter);
+
+      if (typeof yaml.heroImage === "string" && yaml.heroImage.trim() !== "") {
+        return;
+      }
+
+      frontmatterInput.value = setYamlField(
+        frontmatterInput.value || defaultFrontmatter,
+        "heroImage",
+        mdSrc,
+        ["description", "title"]
+      );
+    }
+
+    function normalizeTagInput(value) {
+      return value
+        .trim()
+        .replace(/^#+/u, "")
+        .replace(/\s+/gu, "-")
+        .replace(/^#+/u, "");
+    }
+
+    function getCurrentTags() {
+      const yaml = parseYaml(frontmatterInput.value || defaultFrontmatter);
+
+      if (Array.isArray(yaml.tags)) {
+        return yaml.tags.map(normalizeTagInput).filter(Boolean);
+      }
+
+      if (typeof yaml.tags === "string") {
+        return yaml.tags
+          .split(",")
+          .map(normalizeTagInput)
+          .filter(Boolean);
+      }
+
+      return [];
+    }
+
+    function quoteYamlListValue(value) {
+      return /[:#,[\]{}'"!&*?|>\-<%@`\s]/u.test(value)
+        ? `"${value.replace(/\\/gu, "\\\\").replace(/"/gu, '\\"')}"`
+        : value;
+    }
+
+    function setYamlListField(source, key, values) {
+      const lines = (source || "").split("\n");
+      const fieldIndex = lines.findIndex((line) => new RegExp(`^${key}:`, "u").test(line));
+      const replacement = values.length > 0
+        ? [`${key}:`, ...values.map((value) => `  - ${quoteYamlListValue(value)}`)]
+        : [`${key}: []`];
+
+      if (fieldIndex < 0) {
+        lines.push(...replacement);
+        return lines.join("\n").replace(/^\n+/u, "");
+      }
+
+      let deleteCount = 1;
+      let lookahead = fieldIndex + 1;
+
+      while (lookahead < lines.length && /^\s*-\s+/u.test(lines[lookahead])) {
+        deleteCount += 1;
+        lookahead += 1;
+      }
+
+      lines.splice(fieldIndex, deleteCount, ...replacement);
+
+      return lines.join("\n");
+    }
+
+    function renderTagEditor(tags = getCurrentTags()) {
+      tagChips.innerHTML = tags.length > 0
+        ? tags
+          .map((tag) => `<button type="button" class="tag-editor__chip" data-tag="${escapeAttribute(tag)}"><span>#${escapeHtml(tag)}</span><span aria-hidden="true">×</span></button>`)
+          .join("")
+        : `<span class="tag-editor__empty">#intro 같은 태그를 추가하세요</span>`;
+    }
+
+    function setCurrentTags(tags) {
+      const uniqueTags = [];
+      const seen = new Set();
+
+      tags.map(normalizeTagInput).filter(Boolean).forEach((tag) => {
+        const key = tag.toLowerCase();
+
+        if (!seen.has(key)) {
+          seen.add(key);
+          uniqueTags.push(tag);
+        }
+      });
+
+      frontmatterInput.value = setYamlListField(frontmatterInput.value || defaultFrontmatter, "tags", uniqueTags);
+      renderTagEditor(uniqueTags);
+    }
+
+    function addTagsFromInput() {
+      const newTags = tagInput.value
+        .split(",")
+        .map(normalizeTagInput)
+        .filter(Boolean);
+
+      if (newTags.length === 0) {
+        return;
+      }
+
+      setCurrentTags([...getCurrentTags(), ...newTags]);
+      tagInput.value = "";
+    }
+
+    function inlineMarkdownToHtml(markdown) {
+      let html = escapeHtml(markdown);
+
+      html = html.replace(/`([^`]+)`/gu, "<code>$1</code>");
+      html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/gu, (_, alt, src) => {
+        const previewSrc = resolveAssetUrl(src.trim());
+
+        return `<img src="${escapeAttribute(previewSrc)}" alt="${escapeAttribute(alt)}" data-md-src="${escapeAttribute(src.trim())}" />`;
+      });
+      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gu, '<a href="$2">$1</a>');
+      html = html.replace(/\*\*([^*]+)\*\*/gu, "<strong>$1</strong>");
+      html = html.replace(/~~([^~]+)~~/gu, "<s>$1</s>");
+      html = html.replace(/(^|[^*])\*([^*]+)\*/gu, "$1<em>$2</em>");
+      html = html.replace(/\[\^([^\]]+)\]/gu, '<sup data-footnote-ref="$1">[^$1]</sup>');
+
+      return html;
+    }
+
+    function isBlockStart(line) {
+      return /^(#{1,6}\s|>\s?|[-*]\s+|\d+\.\s+|```|---\s*$|!\[[^\]]*\]\([^)]+\)|\[\^[^\]]+\]:)/u.test(line.trim()) || isTableRow(line) || isDetailsStart(line) || isMdxStart(line);
+    }
+
+    function isDetailsStart(line) {
+      return /^<details\b/iu.test(line.trim());
+    }
+
+    function isTableRow(line) {
+      const trimmed = line.trim();
+
+      return /^\|.*\|$/u.test(trimmed);
+    }
+
+    function isTableSeparator(line) {
+      const trimmed = line.trim();
+
+      if (!isTableRow(trimmed)) {
+        return false;
+      }
+
+      return splitTableRow(trimmed).every((cell) => /^:?-{3,}:?$/u.test(cell.trim()));
+    }
+
+    function isTableStart(lines, index) {
+      return isTableRow(lines[index]) && index + 1 < lines.length && isTableSeparator(lines[index + 1]);
+    }
+
+    function splitTableRow(line) {
+      return line
+        .trim()
+        .replace(/^\|/u, "")
+        .replace(/\|$/u, "")
+        .split("|")
+        .map((cell) => cell.trim());
+    }
+
+    function collectTableBlock(lines, startIndex) {
+      const block = [lines[startIndex], lines[startIndex + 1]];
+      let endIndex = startIndex + 1;
+
+      for (let index = startIndex + 2; index < lines.length; index += 1) {
+        if (!isTableRow(lines[index])) {
+          break;
+        }
+
+        block.push(lines[index]);
+        endIndex = index;
+      }
+
+      return { block: block.join("\n"), endIndex };
+    }
+
+    function getTableAlignment(separatorCell) {
+      const value = separatorCell.trim();
+
+      if (/^:-+:$/u.test(value)) {
+        return "center";
+      }
+
+      if (/^-+:$/u.test(value)) {
+        return "right";
+      }
+
+      if (/^:-+$/u.test(value)) {
+        return "left";
+      }
+
+      return "";
+    }
+
+    function parseTableBlock(block) {
+      const lines = block
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+      if (lines.length < 2 || !isTableSeparator(lines[1])) {
+        return null;
+      }
+
+      const headers = splitTableRow(lines[0]);
+      const alignments = splitTableRow(lines[1]).map(getTableAlignment);
+      const rows = lines.slice(2).map(splitTableRow);
+
+      return { headers, alignments, rows };
+    }
+
+    function renderTableAttributes(alignment) {
+      return alignment ? ` style="text-align: ${alignment}" data-align="${alignment}"` : "";
+    }
+
+    function createTableBlockHtml(block) {
+      const table = parseTableBlock(block);
+
+      if (!table) {
+        return `<pre class="mdx-raw-block" data-mdx-raw="true"><code>${escapeHtml(block)}</code></pre>`;
+      }
+
+      return `<table class="editor-table" data-table-block="true">
+        <thead>
+          <tr>${table.headers.map((cell, index) => `<th${renderTableAttributes(table.alignments[index])}>${inlineMarkdownToHtml(cell)}</th>`).join("")}</tr>
+        </thead>
+        <tbody>
+          ${table.rows
+            .map((row) => `<tr>${table.headers.map((_, index) => `<td${renderTableAttributes(table.alignments[index])}>${inlineMarkdownToHtml(row[index] || "")}</td>`).join("")}</tr>`)
+            .join("")}
+        </tbody>
+      </table>`;
+    }
+
+    function renderTableBlock(block) {
+      const table = parseTableBlock(block);
+
+      if (!table) {
+        return `<pre><code>${escapeHtml(block)}</code></pre>`;
+      }
+
+      return `<div class="table-scroll"><table>
+        <thead>
+          <tr>${table.headers.map((cell, index) => `<th${renderTableAttributes(table.alignments[index])}>${renderInlineMarkdown(cell)}</th>`).join("")}</tr>
+        </thead>
+        <tbody>
+          ${table.rows
+            .map((row) => `<tr>${table.headers.map((_, index) => `<td${renderTableAttributes(table.alignments[index])}>${renderInlineMarkdown(row[index] || "")}</td>`).join("")}</tr>`)
+            .join("")}
+        </tbody>
+      </table></div>`;
+    }
+
+    function escapeTableCell(value) {
+      return value.replace(/\n+/gu, " ").replace(/\|/gu, "\\|").trim();
+    }
+
+    function isMdxStart(line) {
+      const trimmed = line.trim();
+
+      return /^<\/?[A-Z][A-Za-z0-9_.-]*(\s|>|\/>)/u.test(trimmed);
+    }
+
+    function collectDetailsBlock(lines, startIndex) {
+      const block = [lines[startIndex]];
+
+      if (/<\/details>\s*$/iu.test(lines[startIndex])) {
+        return { block: lines[startIndex], endIndex: startIndex };
+      }
+
+      for (let index = startIndex + 1; index < lines.length; index += 1) {
+        block.push(lines[index]);
+
+        if (/<\/details>\s*$/iu.test(lines[index].trim())) {
+          return { block: block.join("\n"), endIndex: index };
+        }
+      }
+
+      return { block: block.join("\n"), endIndex: lines.length - 1 };
+    }
+
+    function parseDetailsBlock(block) {
+      const match = block.trim().match(/^<details\b([^>]*)>([\s\S]*?)<\/details>\s*$/iu);
+
+      if (!match) {
+        return null;
+      }
+
+      const summaryMatch = match[2].match(/^\s*<summary\b[^>]*>([\s\S]*?)<\/summary>\s*/iu);
+
+      if (!summaryMatch) {
+        return null;
+      }
+
+      return {
+        open: /\bopen\b/iu.test(match[1]),
+        summary: summaryMatch[1].replace(/\s+/gu, " ").trim(),
+        body: match[2].slice(summaryMatch[0].length).trim()
+      };
+    }
+
+    function createDetailsBlockHtml(block) {
+      const parsed = parseDetailsBlock(block);
+
+      if (!parsed) {
+        return `<pre class="mdx-raw-block" data-mdx-raw="true"><code>${escapeHtml(block)}</code></pre>`;
+      }
+
+      return `<details class="editor-details-block" data-details-block="true" data-details-open="${parsed.open ? "true" : "false"}" open>
+        <summary>${inlineMarkdownToHtml(parsed.summary)}</summary>
+        <div class="editor-details-body">${markdownToEditorHtml(parsed.body)}</div>
+      </details>`;
+    }
+
+    function renderDetailsBlock(block) {
+      const parsed = parseDetailsBlock(block);
+
+      if (!parsed) {
+        return `<pre><code>${escapeHtml(block)}</code></pre>`;
+      }
+
+      return `<details class="preview-details"${parsed.open ? " open" : ""}>
+        <summary>${renderInlineMarkdown(parsed.summary)}</summary>
+        <div>${renderMarkdown(parsed.body)}</div>
+      </details>`;
+    }
+
+    function collectMdxBlock(lines, startIndex) {
+      const firstLine = lines[startIndex];
+      const tagMatch = firstLine.trim().match(/^<([A-Z][A-Za-z0-9_.-]*)/u);
+
+      if (!tagMatch || /\/>\s*$/u.test(firstLine) || firstLine.includes(`</${tagMatch[1]}>`)) {
+        return { block: firstLine, endIndex: startIndex };
+      }
+
+      const block = [firstLine];
+
+      for (let index = startIndex + 1; index < lines.length; index += 1) {
+        block.push(lines[index]);
+
+        if (lines[index].includes(`</${tagMatch[1]}>`)) {
+          return { block: block.join("\n"), endIndex: index };
+        }
+      }
+
+      return { block: block.join("\n"), endIndex: lines.length - 1 };
+    }
+
+    function markdownToEditorHtml(markdown) {
+      const lines = markdown.replace(/\r\n?/gu, "\n").split("\n");
+      const html = [];
+
+      for (let index = 0; index < lines.length; index += 1) {
+        const line = lines[index];
+        const trimmed = line.trim();
+
+        if (trimmed === "") {
+          continue;
+        }
+
+        if (/^#{1,6}$/u.test(trimmed)) {
+          continue;
+        }
+
+        if (trimmed.startsWith("```")) {
+          const codeLines = [];
+          index += 1;
+
+          while (index < lines.length && !lines[index].trim().startsWith("```")) {
+            codeLines.push(lines[index]);
+            index += 1;
+          }
+
+          html.push(`<pre><code>${escapeHtml(codeLines.join("\n"))}</code></pre>`);
+          continue;
+        }
+
+        if (isTableStart(lines, index)) {
+          const { block, endIndex } = collectTableBlock(lines, index);
+          html.push(createTableBlockHtml(block));
+          index = endIndex;
+          continue;
+        }
+
+        if (isDetailsStart(line)) {
+          const { block, endIndex } = collectDetailsBlock(lines, index);
+          html.push(createDetailsBlockHtml(block));
+          index = endIndex;
+          continue;
+        }
+
+        if (isMdxStart(line)) {
+          const { block, endIndex } = collectMdxBlock(lines, index);
+          html.push(`<pre class="mdx-raw-block" data-mdx-raw="true"><code>${escapeHtml(block)}</code></pre>`);
+          index = endIndex;
+          continue;
+        }
+
+        const imageMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/u);
+
+        if (imageMatch) {
+          html.push(createImageFigureHtml(imageMatch[2].trim(), imageMatch[1].trim()));
+          continue;
+        }
+
+        const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)$/u);
+
+        if (headingMatch) {
+          const level = Math.min(6, headingMatch[1].length);
+          html.push(`<h${level}>${inlineMarkdownToHtml(headingMatch[2])}</h${level}>`);
+          continue;
+        }
+
+        if (/^>\s?/u.test(trimmed)) {
+          const quoteLines = [trimmed.replace(/^>\s?/u, "")];
+
+          while (index + 1 < lines.length && /^>\s?/u.test(lines[index + 1].trim())) {
+            index += 1;
+            quoteLines.push(lines[index].trim().replace(/^>\s?/u, ""));
+          }
+
+          html.push(`<blockquote><p>${inlineMarkdownToHtml(quoteLines.join(" "))}</p></blockquote>`);
+          continue;
+        }
+
+        if (/^[-*]\s+/u.test(trimmed)) {
+          const items = [];
+
+          while (index < lines.length && /^[-*]\s+/u.test(lines[index].trim())) {
+            items.push(`<li>${inlineMarkdownToHtml(lines[index].trim().replace(/^[-*]\s+/u, ""))}</li>`);
+            index += 1;
+          }
+
+          index -= 1;
+          html.push(`<ul>${items.join("")}</ul>`);
+          continue;
+        }
+
+        if (/^\d+\.\s+/u.test(trimmed)) {
+          const items = [];
+
+          while (index < lines.length && /^\d+\.\s+/u.test(lines[index].trim())) {
+            items.push(`<li>${inlineMarkdownToHtml(lines[index].trim().replace(/^\d+\.\s+/u, ""))}</li>`);
+            index += 1;
+          }
+
+          index -= 1;
+          html.push(`<ol>${items.join("")}</ol>`);
+          continue;
+        }
+
+        const footnoteMatch = trimmed.match(/^\[\^([^\]]+)\]:\s*(.*)$/u);
+
+        if (footnoteMatch) {
+          html.push(
+            `<p class="editor-footnote" data-footnote-def="${escapeAttribute(footnoteMatch[1])}"><sup>[^${escapeHtml(footnoteMatch[1])}]</sup> <span>${inlineMarkdownToHtml(footnoteMatch[2])}</span></p>`
+          );
+          continue;
+        }
+
+        if (/^---\s*$/u.test(trimmed)) {
+          html.push("<hr />");
+          continue;
+        }
+
+        const paragraphLines = [line];
+
+        while (index + 1 < lines.length && lines[index + 1].trim() !== "" && !isBlockStart(lines[index + 1])) {
+          index += 1;
+          paragraphLines.push(lines[index]);
+        }
+
+        html.push(`<p>${inlineMarkdownToHtml(paragraphLines.join(" "))}</p>`);
+      }
+
+      return html.join("\n") || defaultBody;
+    }
+
+    function createImageFigureHtml(mdSrc, alt) {
+      const previewSrc = resolveAssetUrl(mdSrc);
+
+      return `<figure class="editor-image" draggable="true" contenteditable="false" data-md-src="${escapeAttribute(mdSrc)}" data-alt="${escapeAttribute(alt)}">
+        <img src="${escapeAttribute(previewSrc)}" alt="${escapeAttribute(alt)}" data-md-src="${escapeAttribute(mdSrc)}" />
+        <figcaption>${escapeHtml(alt || mdSrc)}</figcaption>
+      </figure>`;
+    }
+
+    function createImageFigure(mdSrc, alt) {
+      const template = document.createElement("template");
+      template.innerHTML = createImageFigureHtml(mdSrc, alt).trim();
+
+      return template.content.firstElementChild;
+    }
+
+    function createStarterTable() {
+      const template = document.createElement("template");
+      template.innerHTML = `<table class="editor-table" data-table-block="true">
+        <thead>
+          <tr>
+            <th>구분</th>
+            <th>내용</th>
+            <th>메모</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>항목 1</td>
+            <td>내용을 입력하세요</td>
+            <td>메모</td>
+          </tr>
+          <tr>
+            <td>항목 2</td>
+            <td>내용을 입력하세요</td>
+            <td>메모</td>
+          </tr>
+        </tbody>
+      </table>`;
+
+      return template.content.firstElementChild;
+    }
+
+    function closestBlock(node) {
+      const element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+
+      return element?.closest("p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote, pre, figure, table, details, hr");
+    }
+
+    function insertBlockAfterSelection(node) {
+      richEditor.focus();
+      restoreSelectionRange();
+      const selection = window.getSelection();
+      const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : lastSelectionRange;
+      const block = range ? closestBlock(range.startContainer) : null;
+
+      if (block && richEditor.contains(block)) {
+        block.after(node);
+      } else {
+        richEditor.appendChild(node);
+      }
+
+      ensureTrailingParagraph();
+      updateWordCount();
+    }
+
+    function ensureTrailingParagraph() {
+      const last = richEditor.lastElementChild;
+
+      if (!last || last.matches("figure, pre, table, details, hr")) {
+        richEditor.appendChild(document.createElement("p"));
+        richEditor.lastElementChild.innerHTML = "<br>";
+      }
+    }
+
+    function nodeTextToMarkdown(value) {
+      return value.replace(/\u00a0/gu, " ");
+    }
+
+    function inlineNodeToMarkdown(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return nodeTextToMarkdown(node.textContent || "");
+      }
+
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        return "";
+      }
+
+      const element = node;
+      const tag = element.tagName.toLowerCase();
+
+      if (tag === "figure" && element.classList.contains("editor-image")) {
+        const src = element.dataset.mdSrc || element.querySelector("img")?.dataset.mdSrc || "";
+        const alt = element.dataset.alt || element.querySelector("img")?.getAttribute("alt") || "";
+
+        return `![${alt}](${src})`;
+      }
+
+      if (tag === "figcaption" && element.closest(".editor-image")) {
+        return "";
+      }
+
+      const children = Array.from(element.childNodes).map(inlineNodeToMarkdown).join("");
+
+      if (tag === "strong" || tag === "b") {
+        return `**${children}**`;
+      }
+
+      if (tag === "em" || tag === "i") {
+        return `*${children}*`;
+      }
+
+      if (tag === "s" || tag === "del" || tag === "strike") {
+        return `~~${children}~~`;
+      }
+
+      if (tag === "a") {
+        return `[${children}](${element.getAttribute("href") || ""})`;
+      }
+
+      if (tag === "code") {
+        return `\`${element.textContent || ""}\``;
+      }
+
+      if (tag === "br") {
+        return "\n";
+      }
+
+      if (tag === "sup" && element.dataset.footnoteRef) {
+        return `[^${element.dataset.footnoteRef}]`;
+      }
+
+      if (tag === "img") {
+        const imageFigure = element.closest(".editor-image");
+        const src = element.dataset.mdSrc || imageFigure?.dataset.mdSrc || element.getAttribute("src") || "";
+        const alt = element.getAttribute("alt") || "";
+
+        return `![${alt}](${src})`;
+      }
+
+      return children;
+    }
+
+    function blockNodeToMarkdown(node) {
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        return "";
+      }
+
+      const element = node;
+      const tag = element.tagName.toLowerCase();
+
+      if (element.dataset.mdxRaw === "true") {
+        return element.textContent.trim();
+      }
+
+      if (/^h[1-6]$/u.test(tag)) {
+        const headingText = inlineNodeToMarkdown(element).trim();
+
+        return headingText ? `${"#".repeat(Number(tag.slice(1)))} ${headingText}` : "";
+      }
+
+      if (tag === "p") {
+        if (element.dataset.footnoteDef) {
+          const body = inlineNodeToMarkdown(element.querySelector("span") || element).trim();
+
+          return `[^${element.dataset.footnoteDef}]: ${body}`;
+        }
+
+        return inlineNodeToMarkdown(element).trim();
+      }
+
+      if (tag === "ul") {
+        return Array.from(element.children)
+          .map((item) => `- ${inlineNodeToMarkdown(item).trim()}`)
+          .join("\n");
+      }
+
+      if (tag === "ol") {
+        return Array.from(element.children)
+          .map((item, index) => `${index + 1}. ${inlineNodeToMarkdown(item).trim()}`)
+          .join("\n");
+      }
+
+      if (tag === "blockquote") {
+        return inlineNodeToMarkdown(element)
+          .split("\n")
+          .map((line) => `> ${line.trim()}`)
+          .join("\n");
+      }
+
+      if (tag === "pre") {
+        return `\`\`\`\n${element.textContent.replace(/\n$/u, "")}\n\`\`\``;
+      }
+
+      if (tag === "figure" && element.classList.contains("editor-image")) {
+        const src = element.dataset.mdSrc || "";
+        const alt = element.dataset.alt || element.querySelector("img")?.getAttribute("alt") || "";
+
+        return `![${alt}](${src})`;
+      }
+
+      if (tag === "details" && element.dataset.detailsBlock === "true") {
+        const summary = inlineNodeToMarkdown(element.querySelector("summary") || element).trim();
+        const body = Array.from(element.querySelector(".editor-details-body")?.children || [])
+          .map(blockNodeToMarkdown)
+          .filter((block) => block.trim() !== "")
+          .join("\n\n")
+          .trim();
+        const openAttribute = element.dataset.detailsOpen === "true" ? " open" : "";
+
+        return `<details${openAttribute}>\n<summary>${summary}</summary>\n\n${body}\n</details>`;
+      }
+
+      if (tag === "table" && element.dataset.tableBlock === "true") {
+        const headers = Array.from(element.querySelectorAll("thead th")).map((cell) => escapeTableCell(inlineNodeToMarkdown(cell)));
+        const alignments = Array.from(element.querySelectorAll("thead th")).map((cell) => {
+          const alignment = cell.dataset.align || "";
+
+          if (alignment === "center") {
+            return ":---:";
+          }
+
+          if (alignment === "right") {
+            return "---:";
+          }
+
+          if (alignment === "left") {
+            return ":---";
+          }
+
+          return "---";
+        });
+        const rows = Array.from(element.querySelectorAll("tbody tr")).map((row) =>
+          Array.from(row.children).map((cell) => escapeTableCell(inlineNodeToMarkdown(cell)))
+        );
+        const headerLine = `| ${headers.join(" | ")} |`;
+        const separatorLine = `| ${alignments.join(" | ")} |`;
+        const rowLines = rows.map((row) => `| ${headers.map((_, index) => row[index] || "").join(" | ")} |`);
+
+        return [headerLine, separatorLine, ...rowLines].join("\n");
+      }
+
+      if (tag === "hr") {
+        return "---";
+      }
+
+      return inlineNodeToMarkdown(element).trim();
+    }
+
+    function serializeEditor() {
+      return Array.from(richEditor.children)
+        .map(blockNodeToMarkdown)
+        .filter((block) => block.trim() !== "")
+        .join("\n\n")
+        .trim();
+    }
+
+    function buildDocument() {
+      const frontmatter = frontmatterInput.value.trim();
+      const imports = importsInput.value.trim();
+      const body = serializeEditor();
+
+      return `---\n${frontmatter}\n---\n${imports ? `${imports}\n\n` : ""}${body}\n`;
+    }
+
+    function loadDocument(source, label, folder) {
+      const parsed = parseDocument(source);
+      const yaml = parseYaml(parsed.frontmatter);
+
+      currentFolder = folder || "";
+      currentFileName = label?.split("/").pop() || "index.mdx";
+      frontmatterInput.value = parsed.frontmatter;
+      importsInput.value = parsed.imports;
+      titleInput.value = yaml.title || "";
+      renderTagEditor(getCurrentTags());
+      richEditor.innerHTML = markdownToEditorHtml(parsed.body);
+      documentStatus.textContent = label || "새 글";
+      fileStatus.textContent = currentFileName.endsWith(".md") ? currentFileName.replace(/\.md$/u, ".mdx") : currentFileName;
+      updateWordCount();
+    }
+
+    function renderMarkdown(markdown) {
+      const lines = markdown.replace(/\r\n?/gu, "\n").split("\n");
+      const html = [];
+
+      for (let index = 0; index < lines.length; index += 1) {
+        const line = lines[index];
+        const trimmed = line.trim();
+
+        if (trimmed === "") {
+          continue;
+        }
+
+        if (trimmed.startsWith("```")) {
+          const codeLines = [];
+          index += 1;
+
+          while (index < lines.length && !lines[index].trim().startsWith("```")) {
+            codeLines.push(lines[index]);
+            index += 1;
+          }
+
+          html.push(`<pre><code>${escapeHtml(codeLines.join("\n"))}</code></pre>`);
+          continue;
+        }
+
+        if (isTableStart(lines, index)) {
+          const { block, endIndex } = collectTableBlock(lines, index);
+          html.push(renderTableBlock(block));
+          index = endIndex;
+          continue;
+        }
+
+        if (isDetailsStart(line)) {
+          const { block, endIndex } = collectDetailsBlock(lines, index);
+          html.push(renderDetailsBlock(block));
+          index = endIndex;
+          continue;
+        }
+
+        if (isMdxStart(line)) {
+          const { block, endIndex } = collectMdxBlock(lines, index);
+          html.push(`<pre><code>${escapeHtml(block)}</code></pre>`);
+          index = endIndex;
+          continue;
+        }
+
+        const footnoteMatch = trimmed.match(/^\[\^([^\]]+)\]:\s*(.*)$/u);
+
+        if (footnoteMatch) {
+          html.push(renderFootnoteDefinition(footnoteMatch[1], footnoteMatch[2]));
+          continue;
+        }
+
+        const imageMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/u);
+
+        if (imageMatch) {
+          html.push(`<p><img src="${escapeAttribute(resolveAssetUrl(imageMatch[2].trim()))}" alt="${escapeAttribute(imageMatch[1])}" /></p>`);
+          continue;
+        }
+
+        const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)$/u);
+
+        if (headingMatch) {
+          const level = Math.min(6, headingMatch[1].length);
+          html.push(`<h${level}>${renderInlineMarkdown(headingMatch[2])}</h${level}>`);
+          continue;
+        }
+
+        if (/^>\s?/u.test(trimmed)) {
+          const quoteLines = [trimmed.replace(/^>\s?/u, "")];
+
+          while (index + 1 < lines.length && /^>\s?/u.test(lines[index + 1].trim())) {
+            index += 1;
+            quoteLines.push(lines[index].trim().replace(/^>\s?/u, ""));
+          }
+
+          html.push(`<blockquote><p>${renderInlineMarkdown(quoteLines.join(" "))}</p></blockquote>`);
+          continue;
+        }
+
+        if (/^[-*]\s+/u.test(trimmed)) {
+          const items = [];
+
+          while (index < lines.length && /^[-*]\s+/u.test(lines[index].trim())) {
+            items.push(`<li>${renderInlineMarkdown(lines[index].trim().replace(/^[-*]\s+/u, ""))}</li>`);
+            index += 1;
+          }
+
+          index -= 1;
+          html.push(`<ul>${items.join("")}</ul>`);
+          continue;
+        }
+
+        if (/^\d+\.\s+/u.test(trimmed)) {
+          const items = [];
+
+          while (index < lines.length && /^\d+\.\s+/u.test(lines[index].trim())) {
+            items.push(`<li>${renderInlineMarkdown(lines[index].trim().replace(/^\d+\.\s+/u, ""))}</li>`);
+            index += 1;
+          }
+
+          index -= 1;
+          html.push(`<ol>${items.join("")}</ol>`);
+          continue;
+        }
+
+        if (/^---\s*$/u.test(trimmed)) {
+          html.push("<hr />");
+          continue;
+        }
+
+        const paragraphLines = [line];
+
+        while (index + 1 < lines.length && lines[index + 1].trim() !== "" && !isBlockStart(lines[index + 1])) {
+          index += 1;
+          paragraphLines.push(lines[index]);
+        }
+
+        html.push(`<p>${renderInlineMarkdown(paragraphLines.join(" "))}</p>`);
+      }
+
+      return html.join("\n");
+    }
+
+    function renderFootnoteDefinition(id, body) {
+      return `<p class="preview-footnote-def" id="fn-${escapeAttribute(id)}"><sup>[^${escapeHtml(id)}]</sup> ${renderInlineMarkdown(body)}</p>`;
+    }
+
+    function autolinkUrls(html) {
+      return html.replace(/(^|[\s(])((?:https?:\/\/)[^\s<]+)/gu, (_, prefix, rawUrl) => {
+        let url = rawUrl;
+        let suffix = "";
+
+        while (/[),.。]$/u.test(url)) {
+          suffix = `${url.slice(-1)}${suffix}`;
+          url = url.slice(0, -1);
+        }
+
+        return `${prefix}<a href="${escapeAttribute(url)}">${escapeHtml(url)}</a>${suffix}`;
+      });
+    }
+
+    function renderInlineMarkdown(markdown) {
+      let html = escapeHtml(markdown);
+
+      html = html.replace(/`([^`]+)`/gu, "<code>$1</code>");
+      html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/gu, (_, alt, src) => {
+        return `<img src="${escapeAttribute(resolveAssetUrl(src.trim()))}" alt="${escapeAttribute(alt)}" />`;
+      });
+      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gu, '<a href="$2">$1</a>');
+      html = html.replace(/\*\*([^*]+)\*\*/gu, "<strong>$1</strong>");
+      html = html.replace(/~~([^~]+)~~/gu, "<s>$1</s>");
+      html = html.replace(/(^|[^*])\*([^*]+)\*/gu, "$1<em>$2</em>");
+      html = html.replace(/\[\^([^\]]+)\]/gu, '<sup><a href="#fn-$1">$1</a></sup>');
+      html = autolinkUrls(html);
+
+      return html;
+    }
+
+    function formatPreviewDate(value) {
+      if (!value) {
+        return "";
+      }
+
+      const rawValue = String(value).trim();
+      const dateOnly = rawValue.match(/^(\d{4})-(\d{2})-(\d{2})/u);
+      const date = dateOnly
+        ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+        : new Date(rawValue);
+
+      if (Number.isNaN(date.getTime())) {
+        return rawValue;
+      }
+
+      return new Intl.DateTimeFormat("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      }).format(date);
+    }
+
+    function renderPreview() {
+      const frontmatter = parseYaml(frontmatterInput.value);
+      const body = serializeEditor();
+      const tags = Array.isArray(frontmatter.tags) ? frontmatter.tags : [];
+      const heroImage = frontmatter.heroImage ? resolveAssetUrl(frontmatter.heroImage) : "";
+      const title = frontmatter.title || titleInput.value || "Untitled";
+      const description = frontmatter.description || "";
+      const author = frontmatter.author || "";
+      const pubDate = formatPreviewDate(frontmatter.pubDate);
+      const updatedDate = formatPreviewDate(frontmatter.updatedDate);
+      const section = frontmatter.section || "tech";
+      const metaItems = [
+        pubDate ? `Published on ${pubDate}` : "",
+        author ? `by ${author}` : "",
+        updatedDate ? `Updated ${updatedDate}` : ""
+      ].filter(Boolean);
+
+      previewPane.innerHTML = `
+        <header class="post-header">
+          <span class="section-badge section-badge--${escapeAttribute(section)}">${escapeHtml(section)}</span>
+          <h1>${escapeHtml(title)}</h1>
+          ${description ? `<p class="post-description">${escapeHtml(description)}</p>` : ""}
+          ${metaItems.length > 0 ? `<p class="post-meta">${metaItems.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</p>` : ""}
+          ${
+            tags.length > 0
+              ? `<ul class="tag-list">${tags.map((tag) => `<li><a href="#">#${escapeHtml(tag)}</a></li>`).join("")}</ul>`
+              : ""
+          }
+        </header>
+        ${heroImage ? `<div class="post-hero"><img src="${escapeAttribute(heroImage)}" alt="" /></div>` : ""}
+        <div class="post-body">${renderMarkdown(body)}</div>
+      `;
+      previewStatus.textContent = new Date().toLocaleTimeString("ko-KR", {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function updateWordCount() {
+      const text = richEditor.innerText.trim();
+      const words = text === "" ? 0 : text.split(/\s+/u).length;
+
+      wordStatus.textContent = `${words} words`;
+    }
+
+    function saveSelectionRange() {
+      const selection = window.getSelection();
+
+      if (!selection || selection.rangeCount === 0) {
+        return null;
+      }
+
+      const range = selection.getRangeAt(0);
+      const container = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+        ? range.commonAncestorContainer
+        : range.commonAncestorContainer.parentElement;
+
+      if (!container || !richEditor.contains(container)) {
+        return null;
+      }
+
+      return range.cloneRange();
+    }
+
+    function rememberSelectionRange() {
+      const range = saveSelectionRange();
+
+      if (range) {
+        lastSelectionRange = range;
+      }
+    }
+
+    function restoreSelectionRange() {
+      if (!lastSelectionRange) {
+        return;
+      }
+
+      const selection = window.getSelection();
+
+      if (!selection) {
+        return;
+      }
+
+      selection.removeAllRanges();
+      selection.addRange(lastSelectionRange);
+    }
+
+    function wrapSelectionWithElement(tagName) {
+      richEditor.focus();
+      restoreSelectionRange();
+      const selection = window.getSelection();
+
+      if (!selection || selection.rangeCount === 0) {
+        return;
+      }
+
+      const range = selection.getRangeAt(0);
+      const wrapper = document.createElement(tagName);
+
+      if (range.collapsed) {
+        wrapper.textContent = tagName === "code" ? "code" : "";
+        range.insertNode(wrapper);
+        range.selectNodeContents(wrapper);
+      } else {
+        wrapper.appendChild(range.extractContents());
+        range.insertNode(wrapper);
+        selection.removeAllRanges();
+        range.selectNodeContents(wrapper);
+        selection.addRange(range);
+      }
+
+      rememberSelectionRange();
+      updateWordCount();
+    }
+
+    function addFootnote() {
+      richEditor.focus();
+      restoreSelectionRange();
+      const existing = richEditor.querySelectorAll("[data-footnote-def]").length;
+      const id = String(existing + 1);
+      document.execCommand("insertHTML", false, `<sup data-footnote-ref="${id}">[^${id}]</sup>`);
+      const footnote = document.createElement("p");
+      footnote.className = "editor-footnote";
+      footnote.dataset.footnoteDef = id;
+      footnote.innerHTML = `<sup>[^${id}]</sup> <span>각주 내용을 입력하세요</span>`;
+      richEditor.appendChild(footnote);
+      rememberSelectionRange();
+      updateWordCount();
+    }
+
+    function addLink() {
+      richEditor.focus();
+      restoreSelectionRange();
+      const selection = window.getSelection();
+      const selectedText = selection ? selection.toString() : "";
+      const url = window.prompt("링크 URL", "https://");
+
+      if (!url) {
+        return;
+      }
+
+      if (!selectedText) {
+        document.execCommand("insertHTML", false, `<a href="${escapeAttribute(url)}">${escapeHtml(url)}</a>`);
+      } else {
+        document.execCommand("createLink", false, url);
+      }
+
+      rememberSelectionRange();
+      updateWordCount();
+    }
+
+    function handleImageFiles(files, range) {
+      let insertionBlock = range ? closestBlock(range.startContainer) : null;
+
+      Array.from(files)
+        .filter((file) => file.type.startsWith("image/"))
+        .forEach((file) => {
+          const fileName = slugifyFileName(file.name);
+          const mdSrc = createImageMarkdownSrc(fileName);
+          const normalizedSrc = normalizePath(mdSrc);
+          const previewSrc = URL.createObjectURL(file);
+          uploadedAssetMap.set(fileName, previewSrc);
+          uploadedAssetMap.set(`${imageAssetDirectory}/${fileName}`, previewSrc);
+          uploadedAssetMap.set(normalizedSrc, previewSrc);
+          uploadedAssetMap.set(mdSrc, previewSrc);
+          setHeroImageIfMissing(mdSrc);
+          const imageFigure = createImageFigure(mdSrc, fileName.replace(/\.[^.]+$/u, ""));
+
+          if (insertionBlock) {
+            if (richEditor.contains(insertionBlock)) {
+              insertionBlock.after(imageFigure);
+              insertionBlock = imageFigure;
+            } else {
+              richEditor.appendChild(imageFigure);
+              insertionBlock = imageFigure;
+            }
+          } else {
+            insertBlockAfterSelection(imageFigure);
+            insertionBlock = imageFigure;
+          }
+        });
+
+      ensureTrailingParagraph();
+      updateWordCount();
+    }
+
+    function getDropBlock(event) {
+      const directFigure = event.target.closest?.(".editor-image");
+
+      if (directFigure && richEditor.contains(directFigure)) {
+        return directFigure;
+      }
+
+      let range = null;
+
+      if (document.caretRangeFromPoint) {
+        range = document.caretRangeFromPoint(event.clientX, event.clientY);
+      } else if (document.caretPositionFromPoint) {
+        const position = document.caretPositionFromPoint(event.clientX, event.clientY);
+        range = document.createRange();
+        range.setStart(position.offsetNode, position.offset);
+      }
+
+      return range ? closestBlock(range.startContainer) : null;
+    }
+
+    document.querySelector(".editor-toolbar").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-command]");
+
+      if (!button) {
+        return;
+      }
+
+      richEditor.focus();
+      restoreSelectionRange();
+      document.execCommand(button.dataset.command, false, null);
+      rememberSelectionRange();
+      updateWordCount();
+    });
+
+    document.querySelector(".editor-toolbar").addEventListener("mousedown", (event) => {
+      if (event.target.closest("button")) {
+        event.preventDefault();
+      }
+    });
+
+    blockFormat.addEventListener("change", () => {
+      richEditor.focus();
+      restoreSelectionRange();
+      document.execCommand("formatBlock", false, blockFormat.value);
+      blockFormat.value = "P";
+      rememberSelectionRange();
+      updateWordCount();
+    });
+
+    document.getElementById("quoteButton").addEventListener("click", () => {
+      richEditor.focus();
+      restoreSelectionRange();
+      document.execCommand("formatBlock", false, "blockquote");
+      rememberSelectionRange();
+      updateWordCount();
+    });
+
+    document.getElementById("inlineCodeButton").addEventListener("click", () => {
+      wrapSelectionWithElement("code");
+    });
+
+    document.getElementById("tableButton").addEventListener("click", () => {
+      insertBlockAfterSelection(createStarterTable());
+    });
+
+    document.getElementById("footnoteButton").addEventListener("click", addFootnote);
+    document.getElementById("linkButton").addEventListener("click", addLink);
+
+    imageInput.addEventListener("change", () => {
+      const range = saveSelectionRange() || lastSelectionRange;
+
+      if (imageInput.files?.length) {
+        handleImageFiles(imageInput.files, range);
+      }
+
+      imageInput.value = "";
+    });
+
+    postSelect.addEventListener("change", () => {
+      const selectedPost = posts.find((post) => post.path === postSelect.value);
+
+      if (selectedPost) {
+        loadDocument(selectedPost.source, selectedPost.label, selectedPost.folder);
+      } else {
+        loadDocument(`---\n${defaultFrontmatter}\n---\n\n`, "새 글", "");
+      }
+    });
+
+    postFileInput.addEventListener("change", async () => {
+      const [file] = postFileInput.files || [];
+
+      if (!file) {
+        return;
+      }
+
+      const source = await file.text();
+      loadDocument(source, file.name, "");
+      postSelect.value = "";
+      postFileInput.value = "";
+    });
+
+    titleInput.addEventListener("input", () => {
+      frontmatterInput.value = setYamlField(frontmatterInput.value || defaultFrontmatter, "title", titleInput.value);
+    });
+
+    addTagButton.addEventListener("click", addTagsFromInput);
+
+    tagInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === ",") {
+        event.preventDefault();
+        addTagsFromInput();
+      }
+    });
+
+    tagChips.addEventListener("click", (event) => {
+      const chip = event.target.closest(".tag-editor__chip");
+
+      if (!chip) {
+        return;
+      }
+
+      setCurrentTags(getCurrentTags().filter((tag) => tag !== chip.dataset.tag));
+    });
+
+    frontmatterInput.addEventListener("input", () => {
+      const yaml = parseYaml(frontmatterInput.value);
+      titleInput.value = yaml.title || titleInput.value;
+      renderTagEditor(getCurrentTags());
+    });
+
+    richEditor.addEventListener("input", updateWordCount);
+    richEditor.addEventListener("keyup", rememberSelectionRange);
+    richEditor.addEventListener("mouseup", rememberSelectionRange);
+    richEditor.addEventListener("focus", rememberSelectionRange);
+    document.addEventListener("selectionchange", rememberSelectionRange);
+
+    richEditor.addEventListener("dragstart", (event) => {
+      const figure = event.target.closest?.(".editor-image");
+
+      if (!figure) {
+        return;
+      }
+
+      draggingImage = figure;
+      figure.classList.add("is-dragging");
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", figure.dataset.mdSrc || "");
+    });
+
+    richEditor.addEventListener("dragend", () => {
+      draggingImage?.classList.remove("is-dragging");
+      draggingImage = null;
+    });
+
+    richEditor.addEventListener("dragover", (event) => {
+      if (draggingImage || Array.from(event.dataTransfer?.items || []).some((item) => item.type.startsWith("image/"))) {
+        event.preventDefault();
+      }
+    });
+
+    richEditor.addEventListener("drop", (event) => {
+      const imageFiles = Array.from(event.dataTransfer?.files || []).filter((file) => file.type.startsWith("image/"));
+
+      if (imageFiles.length > 0) {
+        event.preventDefault();
+        let range = null;
+
+        if (document.caretRangeFromPoint) {
+          range = document.caretRangeFromPoint(event.clientX, event.clientY);
+        }
+
+        handleImageFiles(imageFiles, range);
+        return;
+      }
+
+      if (!draggingImage) {
+        return;
+      }
+
+      event.preventDefault();
+      const dropBlock = getDropBlock(event);
+
+      if (dropBlock && dropBlock !== draggingImage && richEditor.contains(dropBlock)) {
+        const rect = dropBlock.getBoundingClientRect();
+
+        if (event.clientY < rect.top + rect.height / 2) {
+          dropBlock.before(draggingImage);
+        } else {
+          dropBlock.after(draggingImage);
+        }
+      } else {
+        richEditor.appendChild(draggingImage);
+      }
+
+      ensureTrailingParagraph();
+      updateWordCount();
+    });
+
+    document.getElementById("previewButton").addEventListener("click", renderPreview);
+
+    document.getElementById("copyButton").addEventListener("click", async () => {
+      await navigator.clipboard.writeText(buildDocument());
+      documentStatus.textContent = "복사됨";
+    });
+
+    document.getElementById("downloadButton").addEventListener("click", () => {
+      const outputName = currentFileName.endsWith(".md") ? currentFileName.replace(/\.md$/u, ".mdx") : currentFileName;
+      const blob = new Blob([buildDocument()], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+
+      anchor.href = url;
+      anchor.download = outputName || "index.mdx";
+      anchor.click();
+      URL.revokeObjectURL(url);
+    });
+
+    if (posts.length > 0) {
+      const firstMarkdownPost = posts.find((post) => post.path.endsWith(".md")) || posts[0];
+      postSelect.value = firstMarkdownPost.path;
+      loadDocument(firstMarkdownPost.source, firstMarkdownPost.label, firstMarkdownPost.folder);
+    } else {
+      loadDocument(`---\n${defaultFrontmatter}\n---\n\n`, "새 글", "");
+    }
+  </script>
+</BaseLayout>
+
+<style is:global>
+  .editor-shell {
+    display: grid;
+    gap: 18px;
+  }
+
+  .editor-topbar {
+    display: flex;
+    gap: 18px;
+    align-items: end;
+    justify-content: space-between;
+  }
+
+  .editor-title p {
+    margin: 0 0 4px;
+    color: var(--muted);
+    font-size: 0.88rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+
+  .editor-title h2,
+  .editor-column-head h2,
+  .preview-head h2 {
+    margin: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    line-height: 1.15;
+  }
+
+  .editor-filebar,
+  .editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .editor-select-label {
+    color: var(--muted);
+    font-size: 0.92rem;
+    font-weight: 700;
+  }
+
+  .editor-filebar select,
+  .editor-toolbar select,
+  .editor-field input,
+  .editor-details textarea {
+    min-height: 38px;
+    border: 1px solid var(--border);
+    background: #ffffff;
+    color: var(--text);
+    font: inherit;
+  }
+
+  .editor-filebar select {
+    max-width: min(430px, 100%);
+    padding: 7px 10px;
+  }
+
+  .editor-button,
+  .editor-filebar button,
+  .editor-toolbar button,
+  .toolbar-upload {
+    display: inline-grid;
+    min-width: 38px;
+    min-height: 38px;
+    place-items: center;
+    border: 1px solid var(--border);
+    background: #f6f6f6;
+    color: var(--text);
+    font: inherit;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .editor-filebar button,
+  .editor-button {
+    padding: 0 12px;
+  }
+
+  .editor-button:hover,
+  .editor-filebar button:hover,
+  .editor-toolbar button:hover,
+  .toolbar-upload:hover {
+    background: #e9e9e9;
+  }
+
+  .editor-button--primary {
+    background: var(--nav);
+    border-color: var(--nav);
+    color: var(--nav-text);
+  }
+
+  .editor-button--primary:hover {
+    background: #3a3a3a;
+  }
+
+  .editor-button input,
+  .toolbar-upload input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .editor-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+    gap: 18px;
+    align-items: start;
+  }
+
+  .editor-column,
+  .preview-column {
+    min-width: 0;
+  }
+
+  .editor-column-head,
+  .preview-head,
+  .editor-meta {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .editor-column-head span,
+  .preview-head span,
+  .editor-meta {
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+
+  .editor-field {
+    display: grid;
+    gap: 6px;
+    margin-top: 18px;
+    font-weight: 700;
+  }
+
+  .editor-field input {
+    width: 100%;
+    padding: 8px 10px;
+  }
+
+  .tag-editor {
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    background: #f8f8f8;
+  }
+
+  .tag-editor__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 36px;
+    align-items: center;
+  }
+
+  .tag-editor__chip {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    min-height: 34px;
+    padding: 5px 10px;
+    border: 1px solid #d1d1d1;
+    background: #f3f3f3;
+    color: #2d2d2d;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .tag-editor__chip:hover {
+    background: #e8e8e8;
+  }
+
+  .tag-editor__empty {
+    color: var(--muted);
+    font-size: 0.92rem;
+    font-weight: 400;
+  }
+
+  .tag-editor__entry {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .tag-editor__entry button {
+    min-height: 38px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    background: #f6f6f6;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .tag-editor__entry button:hover {
+    background: #e9e9e9;
+  }
+
+  .editor-details {
+    margin-top: 12px;
+    border: 1px solid #d4d4d4;
+    background: #f8f8f8;
+  }
+
+  .editor-details summary {
+    padding: 10px 12px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .editor-details textarea {
+    display: block;
+    width: 100%;
+    min-height: 128px;
+    padding: 10px 12px;
+    border: 0;
+    border-top: 1px solid #d4d4d4;
+    resize: vertical;
+    font-family: "SFMono-Regular", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .editor-toolbar {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+    margin-top: 14px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    background: #ededed;
+  }
+
+  .editor-toolbar select {
+    width: 92px;
+    padding: 7px 8px;
+  }
+
+  .toolbar-upload {
+    padding: 0 10px;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  .rich-editor {
+    min-height: 640px;
+    margin-top: 0;
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-top: 0;
+    background: #ffffff;
+    outline: 0;
+  }
+
+  .rich-editor:focus {
+    box-shadow: inset 0 0 0 2px #737373;
+  }
+
+  .rich-editor:empty::before {
+    content: "본문";
+    color: var(--muted);
+  }
+
+  .rich-editor > *:first-child {
+    margin-top: 0;
+  }
+
+  .rich-editor h1,
+  .rich-editor h2,
+  .rich-editor h3,
+  .rich-editor h4 {
+    margin: 1.4rem 0 0.6rem;
+    font-family: Georgia, "Times New Roman", serif;
+    line-height: 1.2;
+  }
+
+  .rich-editor p,
+  .rich-editor ul,
+  .rich-editor ol,
+  .rich-editor blockquote,
+  .rich-editor pre,
+  .rich-editor figure,
+  .rich-editor table {
+    margin: 1rem 0;
+  }
+
+  .rich-editor ul,
+  .rich-editor ol {
+    padding-left: 1.35rem;
+  }
+
+  .rich-editor blockquote {
+    margin-left: 0;
+    padding: 12px 16px;
+    border-left: 4px solid #8a8a8a;
+    background: #f4f4f4;
+  }
+
+  .rich-editor pre {
+    overflow-x: auto;
+    padding: 14px;
+    border: 1px solid #111111;
+    background: #232323;
+    color: #f4f4f4;
+    white-space: pre-wrap;
+  }
+
+  .rich-editor code {
+    padding: 0.1em 0.28em;
+    background: #efefef;
+  }
+
+  .rich-editor pre code {
+    padding: 0;
+    background: transparent;
+    color: inherit;
+  }
+
+  .editor-image {
+    position: relative;
+    padding: 10px;
+    border: 1px solid var(--border);
+    background: #f7f7f7;
+    cursor: move;
+  }
+
+  .editor-image.is-dragging {
+    opacity: 0.45;
+  }
+
+  .editor-image img {
+    width: 100%;
+    max-height: 360px;
+    object-fit: contain;
+    border: 1px solid #d0d0d0;
+    background: #ffffff;
+  }
+
+  .editor-image figcaption {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .editor-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #ffffff;
+    font-size: 0.95rem;
+  }
+
+  .editor-table th,
+  .editor-table td {
+    min-width: 120px;
+    padding: 9px 10px;
+    border: 1px solid #cfcfcf;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .editor-table th {
+    background: #eeeeee;
+    font-weight: 700;
+  }
+
+  .editor-table tr:nth-child(even) td {
+    background: #f8f8f8;
+  }
+
+  .editor-footnote {
+    padding: 8px 10px;
+    border: 1px solid #d6d6d6;
+    background: #f9f9f9;
+    color: #3a3a3a;
+    font-size: 0.95rem;
+  }
+
+  .editor-details-block {
+    margin: 1rem 0;
+    border: 1px solid var(--border);
+    background: #f7f7f7;
+  }
+
+  .editor-details-block summary {
+    padding: 12px 14px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .editor-details-body {
+    padding: 0 14px 14px;
+    border-top: 1px solid #d5d5d5;
+  }
+
+  .editor-details-body > *:first-child {
+    margin-top: 14px;
+  }
+
+  .editor-meta {
+    margin-top: 10px;
+  }
+
+  .preview-article {
+    min-height: 780px;
+    padding: 0;
+    border: 0;
+  }
+
+  .preview-article .post-header {
+    padding-bottom: 18px;
+    border-bottom: 1px solid #d4d4d4;
+  }
+
+  .preview-empty {
+    display: grid;
+    min-height: 360px;
+    place-items: center;
+    border: 1px dashed #bbbbbb;
+    color: var(--muted);
+  }
+
+  .preview-footnotes {
+    margin-top: 2rem;
+    color: #3f3f3f;
+    font-size: 0.95rem;
+  }
+
+  .preview-footnote-def {
+    padding: 10px 12px;
+    border-left: 4px solid #8a8a8a;
+    background: #f7f7f7;
+    overflow-wrap: anywhere;
+  }
+
+  .preview-footnote-def sup {
+    margin-right: 6px;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  @media (max-width: 1040px) {
+    .editor-topbar {
+      align-items: start;
+      flex-direction: column;
+    }
+
+    .editor-workspace {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .editor-filebar,
+    .editor-toolbar {
+      align-items: stretch;
+    }
+
+    .editor-filebar select,
+    .editor-button,
+    .editor-filebar button {
+      width: 100%;
+    }
+
+    .rich-editor {
+      min-height: 520px;
+      padding: 16px;
+    }
+  }
+</style>

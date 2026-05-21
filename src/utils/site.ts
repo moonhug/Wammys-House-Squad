@@ -13,6 +13,7 @@ export const NAV_ITEMS = [
   { href: "/", label: "Home" },
   { href: "/tech", label: "Tech" },
   { href: "/game", label: "Game" },
+  { href: "/editor", label: "Editor" },
   { href: "/tags", label: "Tags" },
   { href: "/about", label: "About" }
 ];
